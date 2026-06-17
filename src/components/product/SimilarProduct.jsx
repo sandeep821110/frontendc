@@ -11,16 +11,19 @@ const SimilarProduct = ({ category, subCategory, currentProductId }) => {
         // Fetch all products and filter by category/subcategory
         const res = await axios.get('/api/products');
         const products = res.data.success && Array.isArray(res.data.data) ? res.data.data : (Array.isArray(res.data) ? res.data : []);
+        const seen = new Set();
         const filtered = products
-          .filter(product =>
-          String(product._id || product.id) !== String(currentProductId) &&
-          (product.category === category || product.subCategory === subCategory)
-        );
+          .filter(product => {
+            const id = String(product._id || product.id);
+            if (id === String(currentProductId) || seen.has(id)) return false;
+            seen.add(id);
+            return product.category === category || product.subCategory === subCategory;
+          });
 
         // Limit to 4 products
         setSimilarProducts(filtered.slice(0, 4));
-      } catch (err) {
-
+      } catch {
+        setSimilarProducts([]);
       }
     };
 

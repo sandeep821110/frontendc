@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Mail, Phone, MapPin, Send, User, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
@@ -12,20 +12,13 @@ const Contact = () => {
   const isAuthenticated = useSelector(state => state.auth.isAuthenticated);
   const user = useSelector(state => state.auth.user); // Assuming user object is available in auth state
   
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [name, setName] = useState(user?.name || '');
+  const [email, setEmail] = useState(user?.email || '');
   const [phone, setPhone] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      setName(user.name || '');
-      setEmail(user.email || '');
-    }
-  }, [isAuthenticated, user]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -112,7 +105,7 @@ const Contact = () => {
                 </div>
                 <div>
                   <h4 className="font-bold text-gray-900">Phone</h4>
-                  <p className="text-gray-600">+91 98765 43210</p>
+                  <p className="text-gray-600">+91 9570523147</p>
                   <p className="text-sm text-gray-400">Mon-Sat from 10am to 7pm</p>
                 </div>
               </div>
@@ -123,7 +116,7 @@ const Contact = () => {
                 </div>
                 <div>
                   <h4 className="font-bold text-gray-900">Email</h4>
-                  <p className="text-gray-600">hello@choosemood.com</p>
+                  <p className="text-gray-600">choosemood34@gmail.com</p>
                   <p className="text-sm text-gray-400">Online support 24/7</p>
                 </div>
               </div>

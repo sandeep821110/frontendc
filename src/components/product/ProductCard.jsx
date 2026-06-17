@@ -56,7 +56,7 @@ const ProductCard = ({ product, fromWishlist = false, wishlistItemId = null }) =
       if (!result.error) {
         toast.success('Added to cart!');
       } else {
-        toast.error('Failed to add to cart: ' + result.error);
+        toast.error('Failed to add to cart: ' + (result.payload || result.error.message));
       }
     }).catch((err) => {
       setIsAddingCart(false);
@@ -85,7 +85,7 @@ const ProductCard = ({ product, fromWishlist = false, wishlistItemId = null }) =
       if (!result.error) {
         navigate('/cart');
       } else {
-        toast.error('Failed to add to cart: ' + result.error);
+        toast.error('Failed to add to cart: ' + (result.payload || result.error.message));
       }
     }).catch((err) => {
       setIsAddingCart(false);

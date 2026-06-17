@@ -74,6 +74,7 @@ const PayUReturn = () => {
         if (storedData) {
           const parsed = JSON.parse(storedData);
           parsed.paymentStatus = status === 'success' ? 'PAID' : 'FAILED';
+          parsed.orderStatus = status === 'success' ? 'CONFIRMED' : 'PENDING';
           localStorage.setItem(PAYMENT_STATUS_KEY, JSON.stringify(parsed));
         }
       } finally {

@@ -1,27 +1,14 @@
-import axios from 'axios';
-import React, { useState, useEffect } from 'react';
+﻿import axios from 'axios';
+import React, { useState, useEffect, useCallback } from 'react';
 import { MapPin, Truck, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 
 const Pincode = () => {
   const [pincode, setPincode] = useState('');
-  const [status, setStatus] = useState(null); // 'loading', 'success', 'error'
+  const [status, setStatus] = useState(null);
   const [deliveryData, setDeliveryData] = useState(null);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    if (pincode.length === 6) {
-      const timeoutId = setTimeout(() => {
-        handlePincodeCheck();
-      }, 500);
-      return () => clearTimeout(timeoutId);
-    } else {
-      setStatus(null);
-      setError('');
-      setDeliveryData(null);
-    }
-  }, [pincode]);
-
-  const handlePincodeCheck = async (e) => {
+  const handlePincodeCheck = useCallback(async (e) => {
     if (e) e.preventDefault();
     if (pincode.length !== 6) {
       setError('Please enter a valid 6-digit pincode');
@@ -38,7 +25,16 @@ const Pincode = () => {
       setStatus('error');
       setError(err.response?.data?.message || 'Delivery not available for this location');
     }
-  };
+  }, [pincode]);
+
+  useEffect(() => {
+    if (pincode.length === 6) {
+      const timeoutId = setTimeout(() => {
+        handlePincodeCheck();
+      }, 500);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [pincode, handlePincodeCheck]);
 
   return (
     <div className="max-w-md mx-auto p-4 sm:p-6 bg-white rounded-2xl shadow-sm border border-gray-100 my-4 sm:my-8 mx-3 sm:mx-auto">

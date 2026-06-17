@@ -6,7 +6,7 @@ import { clearAllCart, fetchCartItems, selectCartItems, selectCartLoading, selec
 import { logout, fetchProfile } from '../../features/auth/authSlice';
 import { getAuthToken } from '../../services/apiClient';
 import { AddressSelector } from './Address';
-import { createOrderAPI, createPaymentAPI, verifyPaymentAPI, updateOrderPaymentAPI, createPayuPaymentAPI, verifyPayuPaymentAPI } from '../../services/orderPaymentAPI';
+import { createOrderAPI, createPaymentAPI, verifyPaymentAPI, updateOrderPaymentAPI } from '../../services/orderPaymentAPI';
 import { applyCouponAPI } from '../../services/couponAPI';
 import { apiClient } from '../../services/apiClient';
 import { useToast } from '../ui/Toast';
@@ -156,7 +156,8 @@ const CheckOut = () => {
       if (noSizeProducts.has(pid)) return false;
       return true;
     }
-    return stock.quantity != null && stock.quantity < item.quantity;
+    if (stock.quantity === null) return false;
+    return stock.quantity <= 0 || stock.quantity < item.quantity;
   };
   const hasOutOfStockItems = cartItems.some(isItemOutOfStock);
   const subtotal = Math.round(cartItems.reduce((acc, item) => {
@@ -165,8 +166,8 @@ const CheckOut = () => {
     const finalPrice = discount ? (price * (1 - discount / 100)) : price;
     return acc + (finalPrice * item.quantity);
   }, 0));
-  const shipping = subtotal < 500 ? 20 : 0;
-  const total = subtotal + shipping;
+  const shipping = 0;
+  const total = subtotal;
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) return;
     setCouponLoading(true);
@@ -202,22 +203,31 @@ const CheckOut = () => {
   };
   const handleCheckoutError = (err) => {
     setIsProcessing(false);
-    const status = err.response?.status;
-    const serverMessage = err.response?.data?.message;
-    const serverData = err.response?.data;
+    const status = err.status || err.response?.status;
+    const serverMessage = err.debug?.message || err.response?.data?.message || err.response?.data?.error;
+    const serverData = err.debug || err.response?.data;
     const isNetworkError = err.code === 'ERR_NETWORK' || !err.response;
+    const requestUrl = err.config?.url || err.debug?.url;
+    const requestMethod = err.config?.method || err.debug?.method;
     const debugData = {
       status,
       message: serverMessage,
-      fullData: serverData,
-      url: err.config?.url,
-      method: err.config?.method,
+      fullData: typeof serverData === 'object' ? JSON.stringify(serverData) : serverData,
+      url: requestUrl,
+      method: requestMethod,
       isNetworkError,
+      service: err.response?.data?.service || (err.config?.baseURL || ''),
       timestamp: new Date().toISOString(),
     };
-    setDebugInfo(JSON.stringify(debugData, null, 2));
+    console.error('Checkout error:', debugData);
+    if (import.meta.env.DEV) setDebugInfo(JSON.stringify(debugData, null, 2));
     if (isNetworkError) {
-      setErrorMsg('Payment service is unavailable. Please try again.');
+      setErrorMsg('Payment service is unavailable. Please check that the API gateway and payment service are running, then try again.');
+      return;
+    }
+    if (status === 502) {
+      const serviceName = debugData.service || 'payment-service';
+      setErrorMsg(`Payment gateway error (502): The ${serviceName} is not reachable. Ensure the service is running and the API gateway's PAYMENT_SERVICE_URL is correct.`);
       return;
     }
     if (status === 401) {
@@ -239,6 +249,10 @@ const CheckOut = () => {
       setErrorMsg(serverMessage || 'Invalid request. Please check your details.');
       return;
     }
+    if (status === 404) {
+      setErrorMsg(serverMessage || 'Payment endpoint not found. The deployed service may need updating.');
+      return;
+    }
     if (status >= 500) {
       setErrorMsg(serverMessage || 'Payment server error. Please try again later.');
       return;
@@ -246,6 +260,32 @@ const CheckOut = () => {
     const detailedError = serverMessage || err.message || 'An error occurred. Please try again.';
     setErrorMsg(detailedError);
   };
+  const checkPaymentServiceHealth = async () => {
+    try {
+      const resp = await apiClient.get('/payments/health', { timeout: 5000 });
+      const data = resp.data;
+      if (data.status !== 'healthy' && data.status !== 'OK') {
+        console.warn('[checkPaymentServiceHealth] Payment service degraded:', data);
+      }
+      return data;
+    } catch (err) {
+      const status = err.response?.status;
+      const gwMsg = err.response?.data?.message || err.response?.data?.error;
+      console.error('[checkPaymentServiceHealth] Payment service unreachable:', {
+        status,
+        message: gwMsg || err.message,
+        target: err.response?.data?.target,
+      });
+      if (status === 502) {
+        throw new Error(`Payment service is not reachable (gateway 502). ${gwMsg || 'Ensure the API gateway and payment-service are running.'}`);
+      }
+      if (!err.response) {
+        throw new Error('Cannot reach API gateway. Ensure the backend is running.');
+      }
+      throw err;
+    }
+  };
+
   const createOrder = async () => {
     try {
       setCheckoutStep('creating');
@@ -259,12 +299,13 @@ const CheckOut = () => {
         quantity: item.quantity,
         price: item.productId.price,
       }));
-      const pmMap = { razorpay: 'razorpay', payu: 'payu', cod: 'cod' };
+      const pmMap = { razorpay: 'RAZORPAY', cod: 'COD' };
       const orderPayload = {
         items,
         addressId: selectedAddress._id,
+        shippingAddress: selectedAddress,
         totalAmount: finalTotal,
-        paymentMethod: pmMap[paymentMethod] || 'cod',
+        paymentMethod: pmMap[paymentMethod] || 'COD',
         couponCode: appliedCoupon?.code || undefined,
         couponDiscount: discountAmount || undefined,
       };
@@ -279,6 +320,26 @@ const CheckOut = () => {
       if (orderResponse.warnings?.stock?.length) {
         setErrorMsg('Order created but stock update had issues: ' + orderResponse.warnings.stock.join('; '));
       }
+      (async () => {
+        try {
+          await apiClient.post('/tracking/internal/create-from-order', {
+            orderId: orderData._id,
+            orderNumber: orderData.orderId || orderData.orderNumber,
+            userId: user?._id,
+            items: cartItems.map(item => ({
+              productId: item.productId._id,
+              name: item.productId.name,
+              quantity: item.quantity,
+              price: item.productId.price,
+            })),
+            shippingAddress: selectedAddress,
+            totalAmount: finalTotal,
+            paymentMethod: pmMap[paymentMethod] || 'COD',
+          });
+        } catch (e) {
+          // tracking creation is non-blocking
+        }
+      })();
       return { orderId, orderNumber, orderStatus, orderData };
     } catch (err) {
       throw err;
@@ -342,15 +403,19 @@ const CheckOut = () => {
             razorpay_payment_id: response.razorpay_payment_id,
             razorpay_signature: response.razorpay_signature,
           };
-          await verifyPaymentAPI(verifyPayload);
-          await updateOrderPaymentAPI(orderId, {
-            paymentId: response.razorpay_payment_id,
-            paymentStatus: 'PAID',
-            orderStatus: 'CONFIRMED',
-            orderNumber,
-            razorpay_order_id: response.razorpay_order_id,
-            razorpay_signature: response.razorpay_signature,
-          });
+          const verifyResult = await verifyPaymentAPI(verifyPayload);
+          if (verifyResult?.data?.status === 'paid') {
+            try {
+              await updateOrderPaymentAPI(orderId, {
+                paymentId: response.razorpay_payment_id,
+                paymentStatus: 'PAID',
+                orderStatus: 'CONFIRMED',
+                orderNumber,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature,
+              });
+            } catch {}
+          }
           try {
             await dispatch(clearAllCart()).unwrap();
           } catch (e) {}
@@ -388,8 +453,8 @@ const CheckOut = () => {
       const options = {
         key: razorpayKeyId || RAZORPAY_KEY_ID,
         amount: razorpayAmountPaise,
-        currency: 'INR',
-        name: 'PROTIN',
+        currency: 'INR', // Do not change
+        name: 'ChooseMood',
         description: `Payment for Order #${orderNumber}`,
         image: '/logo.png',
         order_id: razorpayOrderId,
@@ -397,11 +462,26 @@ const CheckOut = () => {
         prefill: {
           name: selectedAddress.fullName || user?.name || '',
           email: selectedAddress.email || user?.email || '',
-          contact: contactNumber
+          contact: contactNumber,
         },
         notes: { user_id: userId, orderId, orderNumber },
         theme: { color: '#4f46e5' },
-        modal: { ondismiss: onRazorpayCancel }
+        modal: { ondismiss: onRazorpayCancel },
+        config: {
+          display: {
+            blocks: {
+              upi: {
+                name: 'All UPI Options',
+                instruments: [
+                  { method: 'upi' }
+                ]
+              }
+            },
+            preferences: {
+              show_default_blocks: true
+            }
+          }
+        }
       };
       const rzp = new window.Razorpay(options);
       rzp.on('payment.failed', onRazorpayError);
@@ -410,88 +490,6 @@ const CheckOut = () => {
       throw err;
     }
   };
-  const handlePayuPayment = async (userId) => {
-    try {
-      setCheckoutStep('creating');
-      const { orderId, orderNumber, orderData } = await createOrder();
-      createdOrderRef.current = orderId;
-      createdOrderDataRef.current = orderData;
-
-      setCheckoutStep('processing');
-      const contactNumber = (selectedAddress.phone || selectedAddress.phoneNumber || user?.phone || '').replace(/\D/g, '').slice(0, 10);
-      const payuPayload = {
-        orderId,
-        amount: finalTotal,
-        currency: 'INR',
-        productinfo: `Order #${orderNumber}`,
-        firstname: selectedAddress.fullName || user?.name || 'Guest',
-        email: selectedAddress.email || user?.email || 'guest@example.com',
-        phone: contactNumber,
-        udf1: orderId,
-        udf2: orderNumber || '',
-        udf3: appliedCoupon?.code || '',
-        udf4: String(discountAmount || 0),
-      };
-      const payuResponse = await createPayuPaymentAPI(payuPayload);
-      if (!payuResponse.success || !payuResponse.data) {
-        throw new Error(payuResponse.message || 'Failed to create PayU payment');
-      }
-      const payuData = payuResponse.data;
-
-      const successData = {
-        orderId,
-        orderNumber,
-        orderData,
-        paymentMethod: 'PayU',
-        orderStatus: 'PENDING',
-        paymentStatus: 'PENDING',
-        totalAmount: finalTotal,
-        couponCode: appliedCoupon?.code || null,
-        couponDiscount: discountAmount || 0,
-        txnid: payuData.txnid,
-      };
-      localStorage.setItem('lastOrderSuccess', JSON.stringify(successData));
-
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = payuData.baseUrl;
-      form.style.display = 'none';
-      form.target = '_self';
-
-      const fields = {
-        key: payuData.merchantKey,
-        txnid: payuData.txnid,
-        amount: String(payuData.amount),
-        productinfo: payuData.productinfo,
-        firstname: payuData.firstname,
-        email: payuData.email,
-        phone: payuData.phone || '',
-        surl: `${window.location.origin}/payment/payu/return`,
-        furl: `${window.location.origin}/payment/payu/return`,
-        hash: payuData.hash,
-        udf1: payuData.udf1 || orderId,
-        udf2: payuData.udf2 || '',
-        udf3: payuData.udf3 || '',
-        udf4: payuData.udf4 || '',
-        udf5: payuData.udf5 || '',
-        service_provider: 'payu_paisa',
-      };
-
-      Object.entries(fields).forEach(([key, value]) => {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = key;
-        input.value = String(value);
-        form.appendChild(input);
-      });
-
-      document.body.appendChild(form);
-      form.submit();
-    } catch (err) {
-      throw err;
-    }
-  };
-
   const handlePlaceOrder = async (e) => {
     e.preventDefault();
     const authToken = getAuthToken();
@@ -535,8 +533,6 @@ const CheckOut = () => {
         await handleCODPayment(orderId, orderNumber, orderData);
       } else if (paymentMethod === 'razorpay') {
         await handleRazorpayPayment(currentUser._id);
-      } else if (paymentMethod === 'payu') {
-        await handlePayuPayment(currentUser._id);
       }
     } catch (err) {
       handleCheckoutError(err);
@@ -571,13 +567,7 @@ const CheckOut = () => {
                       <span className="font-semibold text-gray-800 text-sm sm:text-base">Online Payment (Razorpay)</span>
                     </div>
                   </label>
-                  <label className={`flex items-center p-3 sm:p-4 border rounded-lg cursor-pointer transition ${paymentMethod === 'payu' ? 'border-indigo-600 bg-indigo-50' : 'border-gray-200'}`}>
-                    <input type="radio" name="paymentMethod" value="payu" checked={paymentMethod === 'payu'} onChange={handlePaymentChange} disabled={isProcessing} />
-                    <div className="ml-3 sm:ml-4 flex-1 flex items-center gap-2 sm:gap-3">
-                      <CreditCard size={18} className="text-purple-600 shrink-0" />
-                      <span className="font-semibold text-gray-800 text-sm sm:text-base">Online Payment (PayU)</span>
-                    </div>
-                  </label>
+
                   <label className={`flex items-center p-3 sm:p-4 border rounded-lg cursor-pointer transition ${paymentMethod === 'cod' ? 'border-indigo-600 bg-indigo-50' : 'border-gray-200'}`}>
                     <input type="radio" name="paymentMethod" value="cod" checked={paymentMethod === 'cod'} onChange={handlePaymentChange} disabled={isProcessing} />
                     <div className="ml-3 sm:ml-4 flex-1 flex items-center gap-2 sm:gap-3">
@@ -631,7 +621,7 @@ const CheckOut = () => {
                           <p className="text-[10px] font-semibold text-red-600 mt-0.5">Out of Stock</p>
                         )}
                       </div>
-                      <span className="font-medium text-gray-800 flex-shrink-0 text-xs sm:text-sm">₹{Math.round(item.productId.price * item.quantity)}</span>
+                      <span className="font-medium text-gray-800 flex-shrink-0 text-xs sm:text-sm">₹{Math.round(((item.productId?.discount ? item.productId.price * (1 - item.productId.discount / 100) : item.productId?.price ?? 0)) * (item.quantity || 1))}</span>
                     </div>
                     );
                   })}
@@ -678,7 +668,7 @@ const CheckOut = () => {
                   </div>
                   <div className="flex justify-between text-gray-600 text-sm sm:text-base">
                     <span>Shipping</span>
-                    <span className="font-semibold text-gray-900">₹{shipping}</span>
+                    <span className="font-semibold text-gray-900">FREE</span>
                   </div>
                   {discountAmount > 0 && (
                     <div className="flex justify-between text-green-600 text-sm sm:text-base">
@@ -734,7 +724,7 @@ const CheckOut = () => {
                       <Loader2 className="animate-spin" size={20} />
                       Processing...
                     </>
-                  ) : paymentMethod === 'cod' ? 'Place Order' : paymentMethod === 'payu' ? 'Proceed to PayU' : 'Proceed to Payment'}
+                  ) : paymentMethod === 'cod' ? 'Place Order' : 'Proceed to Payment'}
                 </button>
               </div>
             </div>
@@ -745,4 +735,3 @@ const CheckOut = () => {
   );
 };
 export default CheckOut;
-

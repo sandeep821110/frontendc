@@ -124,7 +124,7 @@ export const setOnUnauthorized = (callback) => {
 let refreshPromise = null
 
 const doRefresh = async () => {
-  const { data } = await axios.post('/api/auth/refresh-token', {}, {
+  const { data } = await axios.post(`${API_BASE_URL}/auth/refresh-token`, {}, {
     withCredentials: true,
   })
   const newToken = data.accessToken || data.token || data.jwt

@@ -70,8 +70,8 @@ const Cart = () => {
         const finalPrice = discount ? (price * (1 - discount / 100)) : price;
         return acc + (finalPrice * item.quantity);
     }, 0));
-    const shipping = subtotal < 500 ? 20 : 0;
-    const total = subtotal + shipping;
+  const shipping = 0;
+  const total = subtotal;
 
     if (loading) return (
         <div className="min-h-screen flex items-center justify-center">
@@ -191,7 +191,7 @@ const Cart = () => {
                             </div>
                             <div className="flex justify-between text-gray-600 text-sm sm:text-base">
                                 <span>Shipping</span>
-                                <span className="font-semibold text-gray-900">{shipping === 0 ? 'FREE' : `₹${shipping}`}</span>
+                                <span className="font-semibold text-gray-900">FREE</span>
                             </div>
                             <div className="border-t pt-3 sm:pt-4 flex justify-between items-center">
                                 <span className="text-base sm:text-lg font-bold text-gray-900">Total</span>
@@ -222,7 +222,7 @@ const Cart = () => {
                             Clear Cart
                         </button>
                         <p className="text-center text-[10px] sm:text-xs text-gray-400 mt-3 sm:mt-4">
-                            {subtotal >= 500 ? 'Free shipping on orders ₹500+' : 'Shipping charges: ₹20'}
+                            Free shipping on all orders
                         </p>
                     </div>
                 </div>

@@ -10,67 +10,43 @@ const getAuthHeaders = () => {
 };
 
 export const cashOnDelivery = async (orderId) => {
-  try {
-    const { data } = await paymentsApi.post('/cod/confirm', { orderId }, {
-      headers: getAuthHeaders(),
-    });
-    return data;
-  } catch (error) {
-    throw error;
-  }
+  const { data } = await paymentsApi.post('/cod/confirm', { orderId }, {
+    headers: getAuthHeaders(),
+  });
+  return data;
 };
 
 export const createRazorpayOrder = async (orderData) => {
-  try {
-    const { data } = await paymentsApi.post('/create', orderData, {
-      headers: getAuthHeaders(),
-    });
-    return data;
-  } catch (error) {
-    throw error;
-  }
+  const { data } = await paymentsApi.post('/create', orderData, {
+    headers: getAuthHeaders(),
+  });
+  return data;
 };
 
 export const verifyPayment = async (verifyData) => {
-  try {
-    const { data } = await paymentsApi.post('/verify', verifyData, {
-      headers: getAuthHeaders(),
-    });
-    return data;
-  } catch (error) {
-    throw error;
-  }
+  const { data } = await paymentsApi.post('/verify', verifyData, {
+    headers: getAuthHeaders(),
+  });
+  return data;
 };
 
 export const getPaymentStatus = async (orderId) => {
-  try {
-    const { data } = await paymentsApi.get(`/status/${orderId}`, {
-      headers: getAuthHeaders(),
-    });
-    return data;
-  } catch (error) {
-    throw error;
-  }
+  const { data } = await paymentsApi.get(`/status/${orderId}`, {
+    headers: getAuthHeaders(),
+  });
+  return data;
 };
 
 export const createPayuOrder = async (orderData) => {
-  try {
-    const { data } = await paymentsApi.post('/payu/create', orderData, {
-      headers: getAuthHeaders(),
-    });
-    return data;
-  } catch (error) {
-    throw error;
-  }
+  const { data } = await paymentsApi.post('/payu/create', orderData, {
+    headers: getAuthHeaders(),
+  });
+  return data;
 };
 
 export const verifyPayuPayment = async (verifyData) => {
-  try {
-    const { data } = await paymentsApi.post('/payu/verify', verifyData, {
-      headers: getAuthHeaders(),
-    });
-    return data;
-  } catch (error) {
-    throw error;
-  }
+  const { data } = await paymentsApi.post('/payu/verify', verifyData, {
+    headers: getAuthHeaders(),
+  });
+  return data;
 };

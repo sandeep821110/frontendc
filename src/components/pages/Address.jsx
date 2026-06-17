@@ -85,6 +85,7 @@ const Address = ({ isModal = false }) => {
         setIsEditing(false);
         setCurrentAddress({
             fullName: "",
+            email: userEmail || "",
             phoneNumber: "",
             addressLine1: "",
             city: "",
@@ -116,8 +117,9 @@ const Address = ({ isModal = false }) => {
         try {
             const method = isEditing ? 'PUT' : 'POST';
             const endpoint = isEditing ? `/${currentAddress._id}` : '/';
+            const payload = { ...formData, email: formData.email || userEmail };
 
-            const res = isEditing ? await addressApi.put(endpoint, formData) : await addressApi.post(endpoint, formData);
+            const res = isEditing ? await addressApi.put(endpoint, payload) : await addressApi.post(endpoint, payload);
 
             setShowForm(false);
             fetchAddresses();
@@ -225,7 +227,7 @@ const Address = ({ isModal = false }) => {
 
 // A sub-component for the address form to keep things clean
 const AddressForm = ({ address, onSubmit, onCancel, isEditing, userEmail, formError }) => {
-    const [formData, setFormData] = useState(address);
+    const [formData, setFormData] = useState({ ...address, email: address?.email || userEmail });
     const [formErrors, setFormErrors] = useState({});
     const [submitting, setSubmitting] = useState(false);
     const [pincodeStatus, setPincodeStatus] = useState(null);

@@ -44,9 +44,9 @@ const Profile = () => {
     }
   }, [dispatch, token, activeTab]);
 
-  const handleLogout = () => {
-    dispatch(logout());
-    navigate('/login');
+  const handleLogout = async () => {
+    await dispatch(logout());
+    window.location.href = '/';
   };
 
   const handleRevokeSession = (jti) => {

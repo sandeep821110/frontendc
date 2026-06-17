@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ProductCard from './ProductCard';
 import BrandLoader from '../BrandLoader';
+import { apiClient } from '../../services/apiClient';
 
 const ProductList = () => {
   const [products, setProducts] = useState([]);
@@ -10,11 +11,8 @@ const ProductList = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await fetch('/api/products');
-        if (!res.ok) {
-          throw new Error(`API error: ${res.status}`);
-        }
-        const data = await res.json();
+        const res = await apiClient.get('/products');
+        const data = res.data;
         if (data.success && Array.isArray(data.data)) {
           setProducts(data.data);
         } else {

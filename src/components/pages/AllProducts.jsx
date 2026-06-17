@@ -169,21 +169,21 @@ const AllProducts = () => {
         <h3 className="font-semibold text-gray-900 mb-3">Price Range</h3>
         <div className="flex items-center gap-2">
           <input
-            type="number"
+            type="text"
+            inputMode="numeric"
             placeholder="Min"
             value={minPrice}
-            onChange={(e) => handlePriceChange('minPrice', e.target.value)}
+            onChange={(e) => handlePriceChange('minPrice', e.target.value.replace(/\D/g, ''))}
             className="w-full px-2 py-1.5 border rounded text-sm"
-            min="0"
           />
           <span className="text-gray-400">-</span>
           <input
-            type="number"
+            type="text"
+            inputMode="numeric"
             placeholder="Max"
             value={maxPrice}
-            onChange={(e) => handlePriceChange('maxPrice', e.target.value)}
+            onChange={(e) => handlePriceChange('maxPrice', e.target.value.replace(/\D/g, ''))}
             className="w-full px-2 py-1.5 border rounded text-sm"
-            min="0"
           />
         </div>
       </div>

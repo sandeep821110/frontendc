@@ -1,23 +1,41 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle2, PartyPopper, Sparkles, Star, Gift, Bell, ArrowRight } from 'lucide-react';
 
 const CONFETTI_COLORS = ['#ff6b6b', '#ffd93d', '#6bcb77', '#4d96ff', '#ff6b9d', '#c44dff', '#ff9f43', '#00d2d3'];
 
 const OrderSuccess = () => {
   const navigate = useNavigate();
-  const location = useLocation();
+  const [searchParams] = useSearchParams();
   const [countdown, setCountdown] = useState(10);
   const [orderData, setOrderData] = useState(null);
 
-  useEffect(() => {
+   useEffect(() => {
+    try {
+      const payuStatus = searchParams.get('payu_status') || searchParams.get('status');
+      if (payuStatus === 'success') {
+        const stored = localStorage.getItem('lastOrderSuccess');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed.paymentStatus !== 'PAID') {
+            parsed.paymentStatus = 'PAID';
+            parsed.orderStatus = 'CONFIRMED';
+            localStorage.setItem('lastOrderSuccess', JSON.stringify(parsed));
+          }
+        }
+      }
+    } catch { 
+      // Silently handle parse error
+    }
     try {
       const stored = localStorage.getItem('lastOrderSuccess');
       if (stored) {
         setOrderData(JSON.parse(stored));
       }
-    } catch {}
-  }, []);
+    } catch {
+      // Silently handle parse error
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (!orderData) return;
@@ -245,3 +263,6 @@ const OrderSuccess = () => {
 };
 
 export default OrderSuccess;
+
+
+

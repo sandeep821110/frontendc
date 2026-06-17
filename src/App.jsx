@@ -17,7 +17,7 @@ import Wishlist from './components/pages/Wishlist'
 import CheckOut from './components/pages/CheckOut'
 import Orders from './components/pages/Orders'
 import OrderSuccess from './components/pages/OrderSuccess'
-import PayUReturn from './components/pages/PayUReturn'
+
 import { restoreAuthFromStorage, logout } from './features/auth/authSlice'
 import { setOnUnauthorized } from './services/apiClient'
 import Address from './components/pages/Address'
@@ -25,10 +25,12 @@ import SearchResults from './components/pages/SearchResults'
 import AllProducts from './components/pages/AllProducts'
 import DevToken from './components/auth/DevToken'
 import MyQueries from './components/pages/MyQueries'
+
 import PrivacyPolicy from './components/pages/PrivacyPolicy'
 import RefundPolicy from './components/pages/RefundPolicy'
 import TermsOfService from './components/pages/TermsOfService'
 import NotFound from './components/pages/NotFound'
+import ChatWidget from './components/chat/ChatWidget'
 
 const App = () => {
   const dispatch = useDispatch()
@@ -37,11 +39,11 @@ const App = () => {
   // Set global unauthorized handler for any 401 from API calls
   useEffect(() => {
     let loggingOut = false;
-    setOnUnauthorized(() => {
+    setOnUnauthorized(async () => {
       if (loggingOut) return;
       loggingOut = true;
-      dispatch(logout())
-      navigate('/login', { state: { from: window.location.pathname } })
+      await dispatch(logout())
+      window.location.href = '/'
     })
   }, [dispatch, navigate])
 
@@ -106,16 +108,12 @@ const App = () => {
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/refund-policy" element={<RefundPolicy />} />
         <Route path="/terms-of-service" element={<TermsOfService />} />
-        <Route path="/payment/payu/return" element={
-          <RequireAuth>
-            <PayUReturn />
-          </RequireAuth>
-        } />
-        <Route path="/dev-token" element={<DevToken />} />
+        {import.meta.env.DEV && <Route path="/dev-token" element={<DevToken />} />}
         <Route path="*" element={<NotFound />} />
     
     </Routes>
     <Footer />
+    <ChatWidget />
     </div>
   )
 }

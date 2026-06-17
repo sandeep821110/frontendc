@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import ProductCard from './ProductCard';
 import BrandLoader from '../BrandLoader';
 import { Sparkles } from 'lucide-react';
+import { apiClient } from '../../services/apiClient';
 
 const BestSeller = () => {
   const [products, setProducts] = useState([]);
@@ -10,9 +11,8 @@ const BestSeller = () => {
   useEffect(() => {
     const fetchBestSellers = async () => {
       try {
-        const res = await fetch('/api/products?bestseller=true&limit=8');
-        if (!res.ok) throw new Error(`API error: ${res.status}`);
-        const data = await res.json();
+        const res = await apiClient.get('/products?bestseller=true&limit=8');
+        const data = res.data;
         if (data.success && Array.isArray(data.data)) {
           setProducts(data.data);
         } else if (Array.isArray(data)) {
@@ -20,8 +20,7 @@ const BestSeller = () => {
         } else {
           setProducts([]);
         }
-      } catch (err) {
-
+      } catch {
         setProducts([]);
       }
       setLoading(false);
@@ -49,4 +48,3 @@ const BestSeller = () => {
 };
 
 export default BestSeller;
-

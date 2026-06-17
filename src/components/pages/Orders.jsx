@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import { useDispatch } from 'react-redux';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import BrandLoader from '../BrandLoader';
 import { Package, XCircle, ChevronRight, Calendar, IndianRupee, CreditCard, Clock, Download, MapPin, Truck } from 'lucide-react';
 import { logout } from '../../features/auth/authSlice';
-import { createApiClient, getAuthToken } from '../../services/apiClient';
+import { createApiClient } from '../../services/apiClient';
 import { cancelOrderAPI } from '../../services/orderPaymentAPI';
 import { downloadInvoice } from '../../utils/downloadInvoice';
 
@@ -102,7 +102,7 @@ const Orders = () => {
       const status = err.response?.status;
       const serverMsg = err.response?.data?.message || err.response?.data?.error;
       if (err.code === 'ERR_NETWORK') {
-
+        // Silently handle cancel error
       } else if (status === 401) {
         setError('Your session has expired. Please log in again.');
         setTimeout(() => {
@@ -115,7 +115,7 @@ const Orders = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [dispatch, navigate, location.pathname]);
 
   useEffect(() => {
     fetchOrders();
@@ -239,7 +239,7 @@ const Orders = () => {
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 bg-indigo-50 rounded-lg flex items-center justify-center shrink-0 overflow-hidden">
                           {src ? (
-                            <img src={src} alt="" className="w-full h-full object-cover" onError={e => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<svg class=\"w-5 h-5 text-indigo-600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M16.5 7.5C16.5 9.985 14.485 12 12 12S7.5 9.985 7.5 7.5 9.515 3 12 3s4.5 2.015 4.5 4.5z\"/><path d=\"M3 21c0-4.97 4.03-9 9-9s9 4.03 9 9\"/></svg>' }} />
+                            <img src={src} alt="" className="w-full h-full object-cover" onError={e => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<svg class="w-5 h-5 text-indigo-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16.5 7.5C16.5 9.985 14.485 12 12 12S7.5 9.985 7.5 7.5 9.515 3 12 3s4.5 2.015 4.5 4.5z"/><path d="M3 21c0-4.97 4.03-9 9-9s9 4.03 9 9"/></svg>'; }} />
                           ) : (
                             <Package className="text-indigo-600" size={20} />
                           )}
@@ -306,7 +306,7 @@ const Orders = () => {
                       </div>
                       <div className="flex justify-between text-gray-500">
                         <span>Shipping</span>
-                        <span>₹{Math.round(Number(order.shippingPrice || 0)) || 20}</span>
+                        <span>FREE</span>
                       </div>
                       {Number(order.couponDiscount) > 0 && (
                         <div className="flex justify-between text-green-600">

@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback} from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+﻿import { useState, useEffect, useCallback} from 'react';
+import { useSearchParams } from 'react-router-dom';
 import BrandLoader from '../BrandLoader';
 import { Search, X, TrendingUp, Filter } from 'lucide-react';
 import { apiClient } from '../../services/apiClient';
@@ -13,15 +13,67 @@ const SORT_OPTIONS = [
   { value: 'newest', label: 'Newest First' },
 ];
 
+const FilterSidebar = ({ filters, category, minPrice, maxPrice, hasActiveFilters, clearFilters, handleCategoryFilter, handlePriceChange }) => (
+  <div className="bg-white rounded-xl border p-4 space-y-6">
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-semibold text-gray-900">Categories</h3>
+        {hasActiveFilters && (
+          <button onClick={clearFilters} className="text-xs text-indigo-600 hover:underline">Clear all</button>
+        )}
+      </div>
+      <div className="space-y-1">
+        {filters.categories.map((cat) => (
+          <button
+            key={cat}
+            onClick={() => handleCategoryFilter(cat)}
+            className={`block w-full text-left px-3 py-1.5 rounded-lg text-sm transition ${
+              category === cat
+                ? 'bg-indigo-100 text-indigo-700 font-medium'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            {cat}
+          </button>
+        ))}
+        {filters.categories.length === 0 && (
+          <p className="text-sm text-gray-400">No categories available</p>
+        )}
+      </div>
+    </div>
+    <div>
+      <h3 className="font-semibold text-gray-900 mb-3">Price Range</h3>
+      <div className="flex items-center gap-2">
+        <input
+          type="text"
+          inputMode="numeric"
+          placeholder="Min"
+          value={minPrice}
+          onChange={(e) => handlePriceChange('minPrice', e.target.value.replace(/\D/g, ''))}
+          className="w-full px-2 py-1.5 border rounded text-sm"
+        />
+        <span className="text-gray-400">-</span>
+        <input
+          type="text"
+          inputMode="numeric"
+          placeholder="Max"
+          value={maxPrice}
+          onChange={(e) => handlePriceChange('maxPrice', e.target.value.replace(/\D/g, ''))}
+          className="w-full px-2 py-1.5 border rounded text-sm"
+        />
+      </div>
+    </div>
+  </div>
+);
+
 const SearchResults = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
   const query = searchParams.get('q') || '';
   const category = searchParams.get('category') || '';
   const sortBy = searchParams.get('sortBy') || 'relevance';
   const minPrice = searchParams.get('minPrice') || '';
   const maxPrice = searchParams.get('maxPrice') || '';
-  const pageFromUrl = parseInt(searchParams.get('page'), 10) || 1;
+  const page = parseInt(searchParams.get('page'), 10) || 1;
 
   const [results, setResults] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, total: 0, totalPages: 0 });
@@ -29,11 +81,6 @@ const SearchResults = () => {
   const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
-  const [page, setPage] = useState(pageFromUrl);
-
-  useEffect(() => {
-    setPage(pageFromUrl);
-  }, [pageFromUrl]);
 
   const buildSearchParams = useCallback((overrides = {}) => {
     const params = new URLSearchParams();
@@ -63,8 +110,7 @@ const SearchResults = () => {
       if (filtersRes.data.success) {
         setFilters(filtersRes.data.data);
       }
-    } catch (err) {
-
+    } catch {
       setResults([]);
     } finally {
       setLoading(false);
@@ -95,7 +141,6 @@ const SearchResults = () => {
     else params.delete(key);
     params.set('page', '1');
     setSearchParams(params);
-    setPage(1);
   };
 
   const handleSort = (value) => updateUrlParam('sortBy', value);
@@ -106,7 +151,6 @@ const SearchResults = () => {
     else params.set('category', cat);
     params.set('page', '1');
     setSearchParams(params);
-    setPage(1);
   };
 
   const handlePriceChange = (type, value) => {
@@ -115,70 +159,15 @@ const SearchResults = () => {
     else params.delete(type);
     params.set('page', '1');
     setSearchParams(params);
-    setPage(1);
   };
 
   const clearFilters = () => {
     const params = new URLSearchParams();
     if (query) params.set('q', query);
     setSearchParams(params);
-    setPage(1);
   };
 
   const hasActiveFilters = category || minPrice || maxPrice;
-
-  const FilterSidebar = () => (
-    <div className="bg-white rounded-xl border p-4 space-y-6">
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-gray-900">Categories</h3>
-          {hasActiveFilters && (
-            <button onClick={clearFilters} className="text-xs text-indigo-600 hover:underline">Clear all</button>
-          )}
-        </div>
-        <div className="space-y-1">
-          {filters.categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => handleCategoryFilter(cat)}
-              className={`block w-full text-left px-3 py-1.5 rounded-lg text-sm transition ${
-                category === cat
-                  ? 'bg-indigo-100 text-indigo-700 font-medium'
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-          {filters.categories.length === 0 && (
-            <p className="text-sm text-gray-400">No categories available</p>
-          )}
-        </div>
-      </div>
-      <div>
-        <h3 className="font-semibold text-gray-900 mb-3">Price Range</h3>
-        <div className="flex items-center gap-2">
-          <input
-            type="number"
-            placeholder="Min"
-            value={minPrice}
-            onChange={(e) => handlePriceChange('minPrice', e.target.value)}
-            className="w-full px-2 py-1.5 border rounded text-sm"
-            min="0"
-          />
-          <span className="text-gray-400">-</span>
-          <input
-            type="number"
-            placeholder="Max"
-            value={maxPrice}
-            onChange={(e) => handlePriceChange('maxPrice', e.target.value)}
-            className="w-full px-2 py-1.5 border rounded text-sm"
-            min="0"
-          />
-        </div>
-      </div>
-    </div>
-  );
 
   if (!query) {
     return (
@@ -248,7 +237,16 @@ const SearchResults = () => {
           {/* Desktop sidebar */}
           <aside className="hidden lg:block w-64 flex-shrink-0">
             <div className="sticky top-20">
-              <FilterSidebar />
+              <FilterSidebar
+                filters={filters}
+                category={category}
+                minPrice={minPrice}
+                maxPrice={maxPrice}
+                hasActiveFilters={hasActiveFilters}
+                clearFilters={clearFilters}
+                handleCategoryFilter={handleCategoryFilter}
+                handlePriceChange={handlePriceChange}
+              />
             </div>
           </aside>
 
@@ -264,7 +262,16 @@ const SearchResults = () => {
                   </button>
                 </div>
                 <div className="p-4">
-                  <FilterSidebar />
+                  <FilterSidebar
+                    filters={filters}
+                    category={category}
+                    minPrice={minPrice}
+                    maxPrice={maxPrice}
+                    hasActiveFilters={hasActiveFilters}
+                    clearFilters={clearFilters}
+                    handleCategoryFilter={handleCategoryFilter}
+                    handlePriceChange={handlePriceChange}
+                  />
                 </div>
               </div>
             </div>
@@ -316,7 +323,11 @@ const SearchResults = () => {
                 {pagination.totalPages > 1 && (
                   <div className="flex items-center justify-center gap-1.5 mt-8 flex-wrap">
                     <button
-                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      onClick={() => {
+                        const params = new URLSearchParams(searchParams);
+                        params.set('page', String(Math.max(1, page - 1)));
+                        setSearchParams(params);
+                      }}
                       disabled={page <= 1}
                       className="px-3 py-2 bg-white border rounded-lg text-sm disabled:opacity-40 hover:bg-gray-50"
                     >
@@ -329,7 +340,11 @@ const SearchResults = () => {
                       return (
                         <button
                           key={p}
-                          onClick={() => setPage(p)}
+                          onClick={() => {
+                            const params = new URLSearchParams(searchParams);
+                            params.set('page', String(p));
+                            setSearchParams(params);
+                          }}
                           className={`w-9 h-9 rounded-lg text-sm font-medium ${
                             p === page
                               ? 'bg-indigo-600 text-white'
@@ -341,7 +356,11 @@ const SearchResults = () => {
                       );
                     })}
                     <button
-                      onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
+                      onClick={() => {
+                        const params = new URLSearchParams(searchParams);
+                        params.set('page', String(Math.min(pagination.totalPages, page + 1)));
+                        setSearchParams(params);
+                      }}
                       disabled={page >= pagination.totalPages}
                       className="px-3 py-2 bg-white border rounded-lg text-sm disabled:opacity-40 hover:bg-gray-50"
                     >
@@ -359,4 +378,3 @@ const SearchResults = () => {
 };
 
 export default SearchResults;
-

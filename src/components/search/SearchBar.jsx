@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+﻿import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, X, Loader2, TrendingUp } from 'lucide-react';
+import { Search, X, Loader2, TrendingUp, Camera } from 'lucide-react';
 import { apiClient } from '../../services/apiClient';
+import VisualSearchModal from './VisualSearchModal';
 
 const DEBOUNCE_MS = 300;
 
@@ -15,13 +16,14 @@ const SearchBar = () => {
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [noResults, setNoResults] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [visualSearchOpen, setVisualSearchOpen] = useState(false);
   const navigate = useNavigate();
   const inputRef = useRef(null);
   const dropdownRef = useRef(null);
   const debounceTimer = useRef(null);
 
   const fetchSuggestions = useCallback(async (q) => {
-    if (q.trim().length < 2) {
+    if (!q.trim()) {
       setSuggestions([]);
       setNoResults(false);
       return;
@@ -56,6 +58,7 @@ const SearchBar = () => {
     }
   }, []);
 
+  // Initial load of recommendations - intentional set-state-in-effect
   useEffect(() => {
     fetchRecommendations();
   }, [fetchRecommendations]);
@@ -67,7 +70,7 @@ const SearchBar = () => {
     setShowDropdown(true);
 
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
-    if (value.trim().length >= 2) {
+    if (value.trim()) {
       debounceTimer.current = setTimeout(() => fetchSuggestions(value), DEBOUNCE_MS);
     } else {
       setSuggestions([]);
@@ -147,7 +150,7 @@ const SearchBar = () => {
   }, []);
 
   const hasDropdownContent = suggestions.length > 0
-    || (query.trim().length >= 2 && (noResults || loading))
+    || (noResults || loading)
     || (!query.trim() && (recommendations.length > 0 || recsLoading))
     || loading;
 
@@ -164,18 +167,26 @@ const SearchBar = () => {
         onKeyDown={handleKeyDown}
         onFocus={handleFocus}
         placeholder="Search products..."
-        className={`w-full pl-9 pr-8 py-2 bg-gray-800 border border-gray-700 rounded-full text-white text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${extraClasses}`}
+        className={`w-full pl-9 pr-16 py-2 bg-gray-800 border border-gray-700 rounded-full text-white text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${extraClasses}`}
         aria-label="Search"
         autoComplete="off"
       />
+      <button
+        type="button"
+        onClick={() => setVisualSearchOpen(true)}
+        className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-gray-400 hover:text-indigo-400 transition rounded-full hover:bg-gray-700"
+        title="Search by image"
+      >
+        <Camera className="w-4 h-4" />
+      </button>
       {loading && (
-        <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 animate-spin" />
+        <Loader2 className="absolute right-8 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 animate-spin" />
       )}
       {!loading && query && (
         <button
           type="button"
           onClick={handleClear}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+          className="absolute right-8 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
         >
           <X className="w-4 h-4" />
         </button>
@@ -392,6 +403,8 @@ const SearchBar = () => {
           ) : null}
         </div>
       )}
+
+      <VisualSearchModal isOpen={visualSearchOpen} onClose={() => setVisualSearchOpen(false)} />
     </div>
   );
 };

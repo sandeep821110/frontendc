@@ -171,9 +171,9 @@ Look for these messages in order:
 ✅ 👤 User ID: ...
 ✅ 🔐 Token: eyJ...
 ✅ 📦 Step 1: Preparing...
-✅ ✅ Formatted items: [...]
+✅ Formatted items: [...]
 ✅ 🏠 Shipping Address: {...}
-✅ 📦 Step 2: Creating order at http://localhost:5004/api/orders
+✅ 📦 Step 2: Creating order at http://localhost:5053/api/orders
 ```
 
 ### **Step 4: Check Network Tab**

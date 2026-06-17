@@ -3,6 +3,7 @@ import authReducer from './features/auth/authSlice'
 import cartReducer from './features/cart/cartSlice'
 import wishlistReducer from './features/wishlist/wishlistSlice'
 import queriesReducer from './features/queries/queriesSlice'
+import chatReducer from './features/chat/chatSlice'
 
 export const store = configureStore({
   reducer: {
@@ -10,6 +11,7 @@ export const store = configureStore({
     cart: cartReducer,
     wishlist: wishlistReducer,
     queries: queriesReducer,
+    chat: chatReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
@@ -17,5 +19,5 @@ export const store = configureStore({
         ignoredActions: ['persist/PERSIST'],
       },
     }),
-  devTools: process.env.NODE_ENV !== 'production',
+  devTools: import.meta.env.DEV,
 })

@@ -42,10 +42,21 @@ const Footer = () => {
             <h3 className="text-sm font-semibold uppercase tracking-wider mb-4">Support</h3>
             <ul className="space-y-2 text-gray-400 text-sm">
               <li><Link to="/contact" className="hover:text-indigo-400 transition">Contact Us</Link></li>
+              <li><Link to="/my-queries" className="hover:text-indigo-400 transition">My Queries</Link></li>
               <li><Link to="/about" className="hover:text-indigo-400 transition">About Us</Link></li>
               <li><Link to="/refund-policy" className="hover:text-indigo-400 transition">Refund & Return Policy</Link></li>
               <li><Link to="/shipping-policy" className="hover:text-indigo-400 transition">Shipping Policy</Link></li>
             </ul>
+            <div className="mt-4 space-y-2 text-gray-400 text-sm">
+              <p className="flex items-center gap-2">
+                <span className="text-indigo-400">📞</span>
+                <a href="tel:+919570523147" className="hover:text-indigo-400 transition">+91 9570523147</a>
+              </p>
+              <p className="flex items-center gap-2">
+                <span className="text-indigo-400">✉️</span>
+                <a href="mailto:choosemood34@gmail.com" className="hover:text-indigo-400 transition">choosemood34@gmail.com</a>
+              </p>
+            </div>
           </div>
 
           {/* Legal */}

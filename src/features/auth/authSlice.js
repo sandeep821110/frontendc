@@ -2,24 +2,14 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import axios from 'axios'
 import { apiClient, setAuthToken, clearAuthToken, getStoredToken, setStoredRefreshToken, clearStoredRefreshToken, setStoredUser, getStoredUser, clearStoredUser } from '../../services/apiClient'
 
-const API_URL = import.meta.env.VITE_API_BASE_URL || '/api';
-
 // Standalone refresh token function (useful for axios interceptors outside Redux)
 export const refreshAccessToken = async () => {
-  try {
-    // The refresh token is expected to be in an httpOnly cookie,
-    // so we don't need to send it in the body.
-
-    const res = await axios.post(`${API_URL}/auth/refresh-token`, {}, {
-      withCredentials: true // Required for sending/receiving HTTP-only cookies
-    });
-    const token = res.data.accessToken || res.data.token || res.data.jwt;
-    if (token) setAuthToken(token);
-    return token;
-  } catch (error) {
-
-    throw error;
-  }
+  const res = await axios.post('/api/auth/refresh-token', {}, {
+    withCredentials: true
+  });
+  const token = res.data.accessToken || res.data.token || res.data.jwt;
+  if (token) setAuthToken(token);
+  return token;
 };
 
 // Async thunks
@@ -27,21 +17,15 @@ export const sendOtpLogin = createAsyncThunk(
   'auth/sendOtpLogin',
   async (email, { rejectWithValue }) => {
     try {
-
-
-      const res = await apiClient.post('/auth/login', { email })
+      await apiClient.post('/auth/login', { email })
 
       return { email }
     } catch (error) {
-      if (error.response?.status !== 429) {
-
-
-      }
       if (error.response?.status === 429) {
         localStorage.setItem('otpCooldown', Date.now() + 120000);
         return rejectWithValue('Too many requests. Please wait 2 minutes before trying again.');
       }
-      const errorMsg = error.response?.data?.message || `Failed to send OTP: ${error.message}`;
+      const errorMsg = error.response?.data?.error || error.response?.data?.message || `Failed to send OTP: ${error.message}`;
       return rejectWithValue(errorMsg)
     }
   }
@@ -77,17 +61,12 @@ export const verifyOtpLogin = createAsyncThunk(
 
 export const sendOtpSignup = createAsyncThunk(
   'auth/sendOtpSignup',
-  async ({ name, email }, { rejectWithValue }) => {
+  async ({ email }, { rejectWithValue }) => {
     try {
+      await apiClient.post('/auth/send-otp', { email })
 
-      const res = await apiClient.post('/auth/signup', { name, email })
-
-      return { name, email }
+      return { email }
     } catch (error) {
-      if (error.response?.status !== 429) {
-
-
-      }
       if (error.response?.status === 429) {
         localStorage.setItem('otpCooldown', Date.now() + 120000);
         return rejectWithValue('Too many requests. Please wait 2 minutes before trying again.');
@@ -99,7 +78,7 @@ export const sendOtpSignup = createAsyncThunk(
 
 export const verifyOtpSignup = createAsyncThunk(
   'auth/verifyOtpSignup',
-  async ({ email, otp, name }, { rejectWithValue }) => {
+  async ({ email, otp }, { rejectWithValue }) => {
     try {
 
       const res = await apiClient.post('/auth/verify-otp', { email, otp })
@@ -117,11 +96,54 @@ export const verifyOtpSignup = createAsyncThunk(
         token, 
         refreshToken, 
         user: res.data.user, 
-        name 
       }
     } catch (error) {
 
       return rejectWithValue(error.response?.data?.message || error.message || 'Invalid OTP')
+    }
+  }
+)
+
+export const resendOtpLogin = createAsyncThunk(
+  'auth/resendOtpLogin',
+  async (email, { rejectWithValue }) => {
+    try {
+      await apiClient.post('/auth/resend-otp', { email })
+      return { email }
+    } catch (error) {
+      if (error.response?.status === 429) {
+        localStorage.setItem('otpCooldown', Date.now() + 120000);
+        return rejectWithValue('Too many requests. Please wait 2 minutes before trying again.');
+      }
+      return rejectWithValue(error.response?.data?.message || `Failed to resend OTP: ${error.message}`)
+    }
+  }
+)
+
+export const completeProfile = createAsyncThunk(
+  'auth/completeProfile',
+  async ({ name, phone, gender, dateOfBirth }, { getState, rejectWithValue }) => {
+    try {
+      const res = await apiClient.post('/auth/complete-profile', { name, phone, gender, dateOfBirth })
+      return { user: res.data.user }
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || error.message || 'Failed to complete profile')
+    }
+  }
+)
+
+export const resendOtpSignup = createAsyncThunk(
+  'auth/resendOtpSignup',
+  async ({ email }, { rejectWithValue }) => {
+    try {
+      await apiClient.post('/auth/resend-otp', { email })
+      return { email }
+    } catch (error) {
+      if (error.response?.status === 429) {
+        localStorage.setItem('otpCooldown', Date.now() + 120000);
+        return rejectWithValue('Too many requests. Please wait 2 minutes before trying again.');
+      }
+      return rejectWithValue(error.response?.data?.message || `Failed to resend OTP: ${error.message}`)
     }
   }
 )
@@ -149,7 +171,7 @@ export const fetchProfile = createAsyncThunk(
       }
     } catch (error) {
 
-      return rejectWithValue(error.response?.data?.message || error.message || 'Failed to fetch profile')
+      return rejectWithValue(error.response?.data?.error || error.response?.data?.message || error.message || 'Invalid OTP')
     }
   }
 )
@@ -179,7 +201,7 @@ export const logout = createAsyncThunk(
       await apiClient.post('/auth/logout', {});
     } catch (error) {
       if (error.response?.status !== 429) {
-
+        console.error('Logout error:', error);
       }
     }
     loggingOut = false;
@@ -249,9 +271,12 @@ const initialState = {
   user: null,
   token: savedToken,
   isAuthenticated: !!savedToken,
-  step: 1, // 1: email/name, 2: otp/password
+  step: 1, // 1: email, 2: otp, 3: details (name, phone, gender)
   email: '',
   name: '',
+  phone: '',
+  gender: '',
+  dateOfBirth: '',
   otp: '',
   password: '',
   timer: 0,
@@ -261,6 +286,7 @@ const initialState = {
   sessions: [],
   sessionsCount: 0,
   sessionsLoading: false,
+  profileCompleted: false,
 }
 
 const authSlice = createSlice({
@@ -281,6 +307,18 @@ const authSlice = createSlice({
     },
     setOtp: (state, action) => {
       state.otp = action.payload
+    },
+    setPhone: (state, action) => {
+      state.phone = action.payload
+    },
+    setGender: (state, action) => {
+      state.gender = action.payload
+    },
+    setDateOfBirth: (state, action) => {
+      state.dateOfBirth = action.payload
+    },
+    setProfileCompleted: (state, action) => {
+      state.profileCompleted = action.payload
     },
     setTimer: (state, action) => {
       state.timer = action.payload
@@ -334,7 +372,7 @@ const authSlice = createSlice({
         state.loading = false
         state.error = action.payload
       })
-      // sendOtpSignup (similar)
+      // sendOtpSignup
       .addCase(sendOtpSignup.pending, (state) => {
         state.loading = true
         state.error = null
@@ -343,7 +381,6 @@ const authSlice = createSlice({
       .addCase(sendOtpSignup.fulfilled, (state, action) => {
         state.loading = false
         state.email = action.payload.email
-        state.name = action.payload.name
         state.step = 2
         state.timer = 60
       })
@@ -360,15 +397,60 @@ const authSlice = createSlice({
         state.loading = false
         state.token = action.payload.token
         state.user = action.payload.user
-        state.name = action.payload.name
-        state.isAuthenticated = true
-        state.step = 1
+        state.isAuthenticated = false
+        state.step = 3
         state.error = null
         setAuthToken(action.payload.token)
         if (action.payload.refreshToken) setStoredRefreshToken(action.payload.refreshToken)
         if (action.payload.user) setStoredUser(action.payload.user)
       })
       .addCase(verifyOtpSignup.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.payload
+      })
+      // resendOtpLogin
+      .addCase(resendOtpLogin.pending, (state) => {
+        state.loading = true
+        state.error = null
+      })
+      .addCase(resendOtpLogin.fulfilled, (state) => {
+        state.loading = false
+        state.timer = 60
+      })
+      .addCase(resendOtpLogin.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.payload
+      })
+      // resendOtpSignup
+      // resendOtpSignup
+      .addCase(resendOtpSignup.pending, (state) => {
+        state.loading = true
+        state.error = null
+      })
+      .addCase(resendOtpSignup.fulfilled, (state) => {
+        state.loading = false
+        state.timer = 60
+      })
+      .addCase(resendOtpSignup.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.payload
+      })
+      // completeProfile
+      .addCase(completeProfile.pending, (state) => {
+        state.loading = true
+        state.error = null
+      })
+      .addCase(completeProfile.fulfilled, (state, action) => {
+        state.loading = false
+        state.user = action.payload.user
+        state.name = action.payload.user?.name || ''
+        state.isAuthenticated = true
+        state.profileCompleted = true
+        state.step = 1
+        state.error = null
+        if (action.payload.user) setStoredUser(action.payload.user)
+      })
+      .addCase(completeProfile.rejected, (state, action) => {
         state.loading = false
         state.error = action.payload
       })
@@ -449,7 +531,7 @@ const authSlice = createSlice({
   }
 })
 
-export const { clearError, setStep, setEmail, setName, setOtp, setTimer, resetAuth, setToken } = authSlice.actions
+export const { clearError, setStep, setEmail, setName, setOtp, setPhone, setGender, setDateOfBirth, setProfileCompleted, setTimer, resetAuth, setToken } = authSlice.actions
 export default authSlice.reducer
 
 // Selectors
@@ -461,6 +543,9 @@ export const selectError = (state) => state.auth.error
 export const selectStep = (state) => state.auth.step
 export const selectEmail = (state) => state.auth.email
 export const selectName = (state) => state.auth.name
+export const selectPhone = (state) => state.auth.phone
+export const selectGender = (state) => state.auth.gender
+export const selectDateOfBirth = (state) => state.auth.dateOfBirth
 export const selectOtp = (state) => state.auth.otp
 export const selectTimer = (state) => state.auth.timer
 export const selectProfileLoading = (state) => state.auth.profileLoading

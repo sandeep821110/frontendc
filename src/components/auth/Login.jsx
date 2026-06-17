@@ -6,6 +6,7 @@ import { Mail, Lock, Loader2, ArrowRight, AlertCircle } from 'lucide-react';
 import {
   sendOtpLogin,
   verifyOtpLogin,
+  resendOtpLogin,
   clearError,
   setStep,
   setEmail,
@@ -74,7 +75,7 @@ const Login = () => {
   const resendOtp = async () => {
     if (timer > 0) return;
     dispatch(clearError());
-    dispatch(sendOtpLogin(email));
+    dispatch(resendOtpLogin(email));
   };
 
   const handleEmailChange = (e) => {

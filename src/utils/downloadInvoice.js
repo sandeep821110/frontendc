@@ -274,10 +274,25 @@ export const downloadInvoice = (order) => {
     y = doc.lastAutoTable.finalY + 8;
 
     // ===== FOOTER =====
-    if (!fitsOnPage(25)) {
+    // ===== SIGNATURE + FOOTER =====
+    if (!fitsOnPage(35)) {
       doc.addPage();
       y = m;
     }
+
+    doc.setDrawColor(BORDER);
+    doc.setLineWidth(0.3);
+    doc.line(m, y, pw - m, y);
+    y += 5;
+
+    doc.setDrawColor('#94a3b8');
+    doc.setLineWidth(0.3);
+    doc.line(m, y + 10, m + 60, y + 10);
+    normal(6);
+    doc.setTextColor(GRAY);
+    doc.text('Customer Signature', m, y + 14);
+
+    y += 22;
 
     doc.setDrawColor(BORDER);
     doc.setLineWidth(0.4);
@@ -300,9 +315,8 @@ export const downloadInvoice = (order) => {
     doc.rect(0, ph - 2, pw, 2, 'F');
 
     doc.save(`Invoice_${order.orderNumber || order.orderId || order._id || 'order'}.pdf`);
-  } catch (error) {
-
-    alert('Could not download invoice. See console for details.');
+  } catch {
+    // Error handled silently - invoice download failed
   }
 };
 
@@ -321,4 +335,3 @@ const numberToWords = (num) => {
   };
   return convert(n);
 };
-

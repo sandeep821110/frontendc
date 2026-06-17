@@ -50,7 +50,7 @@ export const addToCart = createAsyncThunk(
       return extractCartItems(res.data)
     } catch (error) {
 
-      return rejectWithValue(error.response?.data?.message || 'Failed to add to cart')
+      return rejectWithValue(error.response?.data?.message || error.response?.data?.error || error.message || 'Failed to add to cart')
     }
   }
 )
@@ -66,7 +66,7 @@ export const updateCartQuantity = createAsyncThunk(
       return extractCartItems(res.data)
     } catch (error) {
 
-      return rejectWithValue(error.response?.data?.message || 'Failed to update cart')
+      return rejectWithValue(error.response?.data?.message || error.response?.data?.error || error.message || 'Failed to update cart')
     }
   }
 )
@@ -84,7 +84,7 @@ export const removeCartItem = createAsyncThunk(
       return extractCartItems(res.data)
     } catch (error) {
 
-      return rejectWithValue(error.response?.data?.message || 'Failed to remove item')
+      return rejectWithValue(error.response?.data?.message || error.response?.data?.error || error.message || 'Failed to remove item')
     }
   }
 )
@@ -237,9 +237,8 @@ const cartSlice = createSlice({
         state.loading = true
         state.error = null
       })
-      .addCase(buyNow.fulfilled, (state, action) => {
+      .addCase(buyNow.fulfilled, (state) => {
         state.loading = false
-
       })
       .addCase(buyNow.rejected, (state, action) => {
         state.loading = false
@@ -258,8 +257,10 @@ export const selectCartError = (state) => state.cart.error
 export const selectCartTotal = (state) => {
   return state.cart.items.reduce((total, item) => {
     const price = item.price || item.productId?.price || 0
+    const discount = item.productId?.discount || 0
+    const finalPrice = discount ? price * (1 - discount / 100) : price
     const quantity = item.quantity || 1
-    return total + (price * quantity)
+    return total + (finalPrice * quantity)
   }, 0)
 }
 export const selectCartCount = (state) => {

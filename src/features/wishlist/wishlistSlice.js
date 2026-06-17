@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import { createApiClient } from '../../services/apiClient'
 
-const WISHLIST_API_URL = import.meta.env.VITE_WISHLIST_API_BASE_URL || '/api/wishlist'
+const WISHLIST_API_URL = '/api/wishlist'
 const wishlistApi = createApiClient(WISHLIST_API_URL)
 
 const normalizeWishlistItem = (item) => {
@@ -35,7 +35,7 @@ export const fetchWishlistItems = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
 
-      const res = await wishlistApi.get('/wishlist')
+      const res = await wishlistApi.get('/')
       const { data } = res
 
 
@@ -65,7 +65,7 @@ export const addToWishlist = createAsyncThunk(
             discount: productInput.discount,
           };
 
-      const res = await wishlistApi.post('/wishlist', payload)
+      const res = await wishlistApi.post('/', payload)
 
       return res.data
     } catch (error) {
@@ -80,7 +80,7 @@ export const removeFromWishlist = createAsyncThunk(
   async (idToRemove, { rejectWithValue }) => {
     try {
 
-      await wishlistApi.delete(`/wishlist/${idToRemove}`)
+      await wishlistApi.delete(`/${idToRemove}`)
 
       return idToRemove
     } catch (error) {
@@ -99,7 +99,7 @@ export const clearAllWishlist = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
 
-      await wishlistApi.delete('/wishlist/')
+      await wishlistApi.delete('/')
 
       return true
     } catch (error) {
@@ -147,14 +147,16 @@ const wishlistSlice = createSlice({
       })
       .addCase(addToWishlist.fulfilled, (state, action) => {
         if (action.payload) {
-          const newItem = normalizeWishlistItem(action.payload);
-          const newProductId = newItem.productId?._id;
-
-          if (!newProductId) return; // Can't add if we don't have a product ID.
-
-          const exists = state.items.some(item => String(item.productId?._id) === String(newProductId));
-          if (!exists) {
-            state.items.push(newItem);
+          const payload = action.payload;
+          const items = payload.wishlist || payload.items || (Array.isArray(payload) ? payload : [payload]);
+          const lastItem = Array.isArray(items) ? items[items.length - 1] : items;
+          if (lastItem) {
+            const newItem = normalizeWishlistItem(lastItem);
+            const newProductId = newItem.productId?._id;
+            if (newProductId) {
+              const exists = state.items.some(item => String(item.productId?._id) === String(newProductId));
+              if (!exists) state.items.push(newItem);
+            }
           }
         }
       })
