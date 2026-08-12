@@ -23,7 +23,7 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
         },
         '/api/products': {
-          target: env.VITE_PRODUCTS_URL || 'http://localhost:4001',
+          target: env.VITE_PRODUCTS_URL || 'http://localhost:5001',
           changeOrigin: true,
         },
         '/api/pincodes': {
@@ -42,12 +42,16 @@ export default defineConfig(({ mode }) => {
           target: env.VITE_WISHLIST_URL || 'http://localhost:5006',
           changeOrigin: true,
         },
+        '/api/wallet': {
+          target: env.VITE_WALLET_URL || 'http://localhost:5016',
+          changeOrigin: true,
+        },
         '/api/carousel': {
           target: env.VITE_CAROUSEL_URL || 'http://localhost:5010',
           changeOrigin: true,
         },
         '/api/queries': {
-          target: env.VITE_QUERIES_URL || 'http://localhost:9010',
+          target: env.VITE_QUERIES_URL || 'http://localhost:4001',
           changeOrigin: true,
         },
         '/api/checkout': {
@@ -66,8 +70,12 @@ export default defineConfig(({ mode }) => {
           target: env.VITE_SEARCH_URL || 'http://localhost:4010',
           changeOrigin: true,
         },
-        '/api/chat': {
-          target: env.VITE_CHAT_URL || 'http://localhost:5001',
+        '/api/reviews': {
+          target: env.VITE_REVIEWS_URL || 'http://localhost:7020',
+          changeOrigin: true,
+        },
+        '/review-uploads': {
+          target: env.VITE_REVIEWS_URL || 'http://localhost:7020',
           changeOrigin: true,
         },
         '/uploads': {

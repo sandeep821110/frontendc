@@ -44,22 +44,26 @@ const Wishlist = () => {
     );
 
   return (
-    <div className="min-h-screen bg-gray-50 py-6 sm:py-12 px-3 sm:px-4">
+    <div className="min-h-screen page-bg py-6 sm:py-12 px-3 sm:px-4">
       <div className="max-w-4xl mx-auto">
 
         <div className="flex items-center justify-between mb-6 sm:mb-8">
           <div className="flex items-center gap-2 sm:gap-3">
-            <Heart className="text-red-500 fill-red-500 w-6 h-6 sm:w-8 sm:h-8" size={32} />
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">My Wishlist</h1>
-            <span className="bg-gray-200 text-gray-700 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm font-bold">
+            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-rose-500 to-pink-700 flex items-center justify-center shadow-lg shadow-rose-500/30">
+              <Heart className="text-white w-6 h-6" size={28} />
+            </div>
+            <div>
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-gray-900">My Wishlist</h1>
+              <span className="chip bg-gradient-to-r from-rose-100 to-pink-100 text-pink-700 font-bold mt-1">
                 {wishlistItems.length} Items
-            </span>
+              </span>
+            </div>
           </div>
           {wishlistItems.length > 0 && (
             <button
               onClick={handleClearAll}
               disabled={clearing}
-              className="flex items-center gap-1.5 bg-red-50 text-red-600 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-bold hover:bg-red-100 transition disabled:opacity-50"
+              className="flex items-center gap-1.5 bg-rose-50 text-rose-600 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold hover:bg-rose-100 transition disabled:opacity-50"
             >
               {clearing ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
               Clear All
@@ -68,19 +72,19 @@ const Wishlist = () => {
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 text-sm">
+          <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-2xl mb-6 text-sm">
             {error}
           </div>
         )}
 
         {wishlistItems.length === 0 ? (
-            <div className="bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-12 text-center shadow-sm border border-gray-100">
-                <div className="bg-indigo-50 w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
-                    <Heart className="text-indigo-600 w-6 h-6 sm:w-8 sm:h-8" size={32} />
+            <div className="card p-6 sm:p-12 text-center">
+                <div className="bg-gradient-to-br from-rose-100 via-rose-100 to-pink-100 w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6 shadow-inner">
+                    <Heart className="text-rose-500 w-6 h-6 sm:w-8 sm:h-8" size={32} />
                 </div>
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Your wishlist is empty</h2>
+                <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 mb-2">Your wishlist is empty</h2>
                 <p className="text-gray-500 mb-6 sm:mb-8 text-sm sm:text-base">Save items you love here to keep track of them.</p>
-                <Link to="/" className="inline-flex items-center gap-2 bg-indigo-600 text-white px-6 sm:px-8 py-2.5 sm:py-3 rounded-xl font-bold hover:bg-indigo-700 transition text-sm sm:text-base">
+                <Link to="/" className="btn-gradient !px-8 !py-3 !text-sm sm:!text-base">
                     Start Shopping <ArrowRight size={18} />
                 </Link>
             </div>

@@ -4,6 +4,7 @@ import BrandLoader from '../BrandLoader';
 import { Filter, X } from 'lucide-react';
 import { apiClient } from '../../services/apiClient';
 import ProductCard from '../product/ProductCard';
+import PriceRangeSlider from '../ui/PriceRangeSlider';
 
 const SORT_OPTIONS = [
   { value: 'newest', label: 'Newest First' },
@@ -11,6 +12,13 @@ const SORT_OPTIONS = [
   { value: 'price_desc', label: 'Price: High to Low' },
   { value: 'rating', label: 'Highest Rated' },
 ];
+
+const SORT_TO_BACKEND = {
+  newest: { sortBy: 'createdAt', sortOrder: 'desc' },
+  price_asc: { sortBy: 'price', sortOrder: 'asc' },
+  price_desc: { sortBy: 'price', sortOrder: 'desc' },
+  rating: { sortBy: 'rating', sortOrder: 'desc' },
+};
 
 const AllProducts = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -36,7 +44,9 @@ const AllProducts = () => {
     const params = new URLSearchParams();
     if (overrides.category || category) params.set('category', overrides.category || category);
     if (overrides.size || size) params.set('size', overrides.size || size);
-    if (overrides.sortBy || sortBy) params.set('sortBy', overrides.sortBy || sortBy);
+    const sort = SORT_TO_BACKEND[overrides.sortBy || sortBy] || SORT_TO_BACKEND.newest;
+    params.set('sortBy', sort.sortBy);
+    params.set('sortOrder', sort.sortOrder);
     if (overrides.minPrice || minPrice) params.set('minPrice', overrides.minPrice || minPrice);
     if (overrides.maxPrice || maxPrice) params.set('maxPrice', overrides.maxPrice || maxPrice);
     params.set('page', String(overrides.page || page));
@@ -100,10 +110,14 @@ const AllProducts = () => {
     setPage(1);
   };
 
-  const handlePriceChange = (type, value) => {
+  const applyPriceRange = (newMin, newMax) => {
     const params = new URLSearchParams(searchParams);
-    if (value) params.set(type, value);
-    else params.delete(type);
+    const minBound = availableFilters.priceRange?.minPrice ?? 0;
+    const maxBound = availableFilters.priceRange?.maxPrice ?? 10000;
+    if (newMin > minBound) params.set('minPrice', String(newMin));
+    else params.delete('minPrice');
+    if (newMax < maxBound) params.set('maxPrice', String(newMax));
+    else params.delete('maxPrice');
     params.set('page', '1');
     setSearchParams(params);
     setPage(1);
@@ -117,12 +131,12 @@ const AllProducts = () => {
   const hasActiveFilters = category || size || minPrice || maxPrice;
 
   const FilterSidebar = () => (
-    <div className="bg-white rounded-xl border p-4 space-y-6">
+    <div className="card p-4 space-y-6">
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-gray-900">Categories</h3>
+          <h3 className="font-bold text-slate-900">Categories</h3>
           {hasActiveFilters && (
-            <button onClick={clearFilters} className="text-xs text-indigo-600 hover:underline">Clear all</button>
+            <button onClick={clearFilters} className="text-xs text-pink-600 hover:underline">Clear all</button>
           )}
         </div>
         <div className="space-y-1">
@@ -132,89 +146,80 @@ const AllProducts = () => {
               onClick={() => handleCategoryFilter(cat)}
               className={`block w-full text-left px-3 py-1.5 rounded-lg text-sm transition ${
                 category === cat
-                  ? 'bg-indigo-100 text-indigo-700 font-medium'
-                  : 'text-gray-600 hover:bg-gray-100'
+                  ? 'bg-gradient-to-r from-rose-100 to-pink-100 text-pink-700 font-medium'
+                  : 'text-slate-600 hover:bg-slate-100'
               }`}
             >
               {cat}
             </button>
           ))}
           {availableFilters.categories.length === 0 && (
-            <p className="text-sm text-gray-400">No categories available</p>
+            <p className="text-sm text-slate-400">No categories available</p>
           )}
         </div>
       </div>
       <div>
-        <h3 className="font-semibold text-gray-900 mb-3">Size</h3>
+        <h3 className="font-bold text-slate-900 mb-3">Size</h3>
         <div className="flex flex-wrap gap-2">
           {availableFilters.sizes.map((s) => (
             <button
               key={s}
               onClick={() => handleSizeFilter(s)}
-              className={`px-3 py-1.5 border rounded-lg text-sm font-medium transition ${
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
                 size === s
-                  ? 'bg-indigo-600 text-white border-indigo-600'
-                  : 'text-gray-600 border-gray-300 hover:border-indigo-600'
+                  ? 'btn-gradient !px-3 !py-1.5 !text-sm'
+                  : 'text-slate-600 border border-slate-200 bg-white hover:border-pink-500 hover:text-pink-600'
               }`}
             >
               {s}
             </button>
           ))}
           {availableFilters.sizes.length === 0 && (
-            <p className="text-sm text-gray-400">No sizes available</p>
+            <p className="text-sm text-slate-400">No sizes available</p>
           )}
         </div>
       </div>
       <div>
-        <h3 className="font-semibold text-gray-900 mb-3">Price Range</h3>
-        <div className="flex items-center gap-2">
-          <input
-            type="text"
-            inputMode="numeric"
-            placeholder="Min"
-            value={minPrice}
-            onChange={(e) => handlePriceChange('minPrice', e.target.value.replace(/\D/g, ''))}
-            className="w-full px-2 py-1.5 border rounded text-sm"
-          />
-          <span className="text-gray-400">-</span>
-          <input
-            type="text"
-            inputMode="numeric"
-            placeholder="Max"
-            value={maxPrice}
-            onChange={(e) => handlePriceChange('maxPrice', e.target.value.replace(/\D/g, ''))}
-            className="w-full px-2 py-1.5 border rounded text-sm"
-          />
-        </div>
+        <h3 className="font-bold text-slate-900 mb-3">Price Range</h3>
+        <PriceRangeSlider
+          min={availableFilters.priceRange?.minPrice ?? 0}
+          max={availableFilters.priceRange?.maxPrice ?? 10000}
+          valueMin={minPrice ? Number(minPrice) : (availableFilters.priceRange?.minPrice ?? 0)}
+          valueMax={maxPrice ? Number(maxPrice) : (availableFilters.priceRange?.maxPrice ?? 10000)}
+          onCommit={applyPriceRange}
+        />
       </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen page-bg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">All Products</h1>
-            <p className="text-sm text-gray-500 mt-1">
+            <span className="section-badge mb-2">Shop the collection</span>
+            <h1 className="section-title !text-2xl sm:!text-3xl mt-1">
+              All <span className="gradient-text-animated">Products</span>
+            </h1>
+            <p className="text-sm text-slate-500 mt-1">
               {pagination.total} product{pagination.total !== 1 ? 's' : ''} found
             </p>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowMobileFilters(true)}
-              className="lg:hidden flex items-center gap-2 px-3 py-2 bg-white border rounded-lg text-sm hover:bg-gray-50"
+              className="lg:hidden flex items-center gap-2 px-3 py-2 btn-outline !text-sm"
             >
               <Filter className="w-4 h-4" />
               Filters
               {hasActiveFilters && (
-                <span className="w-2 h-2 rounded-full bg-indigo-600" />
+                <span className="w-2 h-2 rounded-full bg-pink-600" />
               )}
             </button>
             <select
               value={sortBy}
               onChange={(e) => handleSort(e.target.value)}
-              className="px-3 py-2 bg-white border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
+              className="input !py-2 !text-sm w-auto"
             >
               {SORT_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -232,11 +237,11 @@ const AllProducts = () => {
 
           {showMobileFilters && (
             <div className="fixed inset-0 z-50 lg:hidden">
-              <div className="absolute inset-0 bg-black/50" onClick={() => setShowMobileFilters(false)} />
-              <div className="absolute right-0 top-0 bottom-0 w-80 max-w-[85vw] bg-white shadow-xl overflow-y-auto">
-                <div className="flex items-center justify-between p-4 border-b">
-                  <h2 className="font-semibold text-gray-900">Filters</h2>
-                  <button onClick={() => setShowMobileFilters(false)} className="p-1 hover:bg-gray-100 rounded">
+              <div className="absolute inset-0 bg-slate-950/50 backdrop-blur-sm" onClick={() => setShowMobileFilters(false)} />
+              <div className="absolute right-0 top-0 bottom-0 w-80 max-w-[85vw] bg-white shadow-2xl overflow-y-auto">
+                <div className="flex items-center justify-between p-4 border-b border-slate-100">
+                  <h2 className="font-bold text-slate-900">Filters</h2>
+                  <button onClick={() => setShowMobileFilters(false)} className="p-1.5 hover:bg-slate-100 rounded-lg">
                     <X className="w-5 h-5" />
                   </button>
                 </div>
@@ -251,12 +256,12 @@ const AllProducts = () => {
             {loading ? (
               <BrandLoader text="Loading products..." />
             ) : products.length === 0 ? (
-              <div className="text-center py-20">
-                <h2 className="text-xl font-semibold text-gray-600 mb-2">No products found</h2>
-                <p className="text-gray-400 mb-4">Try adjusting your filter criteria</p>
+              <div className="card p-10 text-center">
+                <h2 className="text-xl font-bold text-slate-700 mb-2">No products found</h2>
+                <p className="text-slate-400 mb-4">Try adjusting your filter criteria</p>
                 <button
                   onClick={clearFilters}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700"
+                  className="btn-gradient !px-6 !py-2.5"
                 >
                   Clear all filters
                 </button>
@@ -266,7 +271,7 @@ const AllProducts = () => {
                 {hasActiveFilters && (
                   <div className="flex flex-wrap items-center gap-2 mb-4">
                     {category && (
-                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm">
+                      <span className="chip bg-rose-100 text-pink-700 font-medium text-sm">
                         {category}
                         <button onClick={() => handleCategoryFilter(category)}>
                           <X className="w-3 h-3" />
@@ -274,7 +279,7 @@ const AllProducts = () => {
                       </span>
                     )}
                     {size && (
-                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm">
+                      <span className="chip bg-rose-100 text-pink-700 font-medium text-sm">
                         Size: {size}
                         <button onClick={() => handleSizeFilter(size)}>
                           <X className="w-3 h-3" />
@@ -282,9 +287,9 @@ const AllProducts = () => {
                       </span>
                     )}
                     {(minPrice || maxPrice) && (
-                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm">
+                      <span className="chip bg-rose-100 text-pink-700 font-medium text-sm">
                         ₹{minPrice || 0} - ₹{maxPrice || '∞'}
-                        <button onClick={() => { handlePriceChange('minPrice', ''); handlePriceChange('maxPrice', ''); }}>
+                        <button onClick={() => applyPriceRange(availableFilters.priceRange?.minPrice ?? 0, availableFilters.priceRange?.maxPrice ?? 10000)}>
                           <X className="w-3 h-3" />
                         </button>
                       </span>
@@ -302,7 +307,7 @@ const AllProducts = () => {
                     <button
                       onClick={() => setPage((p) => Math.max(1, p - 1))}
                       disabled={page <= 1}
-                      className="px-3 py-2 bg-white border rounded-lg text-sm disabled:opacity-40 hover:bg-gray-50"
+                      className="btn-outline !py-2 !px-3 !text-sm disabled:opacity-40"
                     >
                       Previous
                     </button>
@@ -316,8 +321,8 @@ const AllProducts = () => {
                           onClick={() => setPage(p)}
                           className={`w-9 h-9 rounded-lg text-sm font-medium ${
                             p === page
-                              ? 'bg-indigo-600 text-white'
-                              : 'bg-white border hover:bg-gray-50'
+                              ? 'btn-gradient !w-9 !h-9 !p-0 !text-sm'
+                              : 'btn-outline !w-9 !h-9 !p-0 !text-sm'
                           }`}
                         >
                           {p}
@@ -327,7 +332,7 @@ const AllProducts = () => {
                     <button
                       onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
                       disabled={page >= pagination.totalPages}
-                      className="px-3 py-2 bg-white border rounded-lg text-sm disabled:opacity-40 hover:bg-gray-50"
+                      className="btn-outline !py-2 !px-3 !text-sm disabled:opacity-40"
                     >
                       Next
                     </button>

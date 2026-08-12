@@ -12,10 +12,10 @@ export const useToast = () => {
 
 const TOAST_DURATION = 3000;
 const TOAST_TYPES = {
-  success: { icon: CheckCircle2, bg: 'bg-green-50 border-green-200', text: 'text-green-800', iconColor: 'text-green-500' },
-  error: { icon: XCircle, bg: 'bg-red-50 border-red-200', text: 'text-red-800', iconColor: 'text-red-500' },
-  warning: { icon: AlertCircle, bg: 'bg-yellow-50 border-yellow-200', text: 'text-yellow-800', iconColor: 'text-yellow-500' },
-  info: { icon: Info, bg: 'bg-blue-50 border-blue-200', text: 'text-blue-800', iconColor: 'text-blue-500' },
+  success: { icon: CheckCircle2, bg: 'bg-white ring-1 ring-emerald-200', text: 'text-emerald-800', iconColor: 'text-emerald-500' },
+  error: { icon: XCircle, bg: 'bg-white ring-1 ring-rose-200', text: 'text-rose-800', iconColor: 'text-rose-500' },
+  warning: { icon: AlertCircle, bg: 'bg-white ring-1 ring-amber-200', text: 'text-amber-800', iconColor: 'text-amber-500' },
+  info: { icon: Info, bg: 'bg-white ring-1 ring-pink-200', text: 'text-pink-800', iconColor: 'text-pink-500' },
 };
 
 export const ToastProvider = ({ children }) => {
@@ -53,7 +53,7 @@ export const ToastProvider = ({ children }) => {
           return (
             <div
               key={t.id}
-              className={`pointer-events-auto flex items-start gap-3 p-4 rounded-xl border shadow-lg animate-slide-in-right ${config.bg}`}
+              className={`pointer-events-auto flex items-start gap-3 p-4 rounded-2xl shadow-xl shadow-pink-500/10 animate-slide-in-right ${config.bg}`}
               style={{ animation: 'slideInRight 0.3s ease-out' }}
             >
               <Icon className={`shrink-0 mt-0.5 ${config.iconColor}`} size={20} />

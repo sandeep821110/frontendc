@@ -1,116 +1,46 @@
 import axios from 'axios'
 
-const ACCESS_TOKEN_KEY = 'token'
-const REFRESH_TOKEN_KEY = 'refresh_token'
-const USER_KEY = 'user_data'
+const API_BASE_URL = '/api'
 
-// Migrate old cookie-stored data to localStorage
-const migrateFromCookies = () => {
-  const getCookie = (name) => {
-    const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`))
-    return match ? decodeURIComponent(match[1]) : null
-  }
-  const removeCookie = (name) => {
-    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`
-  }
+// ---- Token storage policy -------------------------------------------------
+// Access + refresh tokens live ONLY in httpOnly cookies set by the auth
+// service (authToken / refreshToken). The access token is additionally kept
+// in memory so the axios interceptor can attach it as a Bearer header.
+// Nothing token-related is persisted in localStorage or non-httpOnly cookies.
 
-  // Check current key first, then legacy cookie names
-  const oldToken = getCookie(ACCESS_TOKEN_KEY) || getCookie('access_token')
-  if (oldToken && !localStorage.getItem(ACCESS_TOKEN_KEY)) {
-    localStorage.setItem(ACCESS_TOKEN_KEY, oldToken)
-  }
-  const oldRefresh = getCookie(REFRESH_TOKEN_KEY) || getCookie('refresh_token')
-  if (oldRefresh && !localStorage.getItem(REFRESH_TOKEN_KEY)) {
-    localStorage.setItem(REFRESH_TOKEN_KEY, oldRefresh)
-  }
-  const oldUser = getCookie(USER_KEY)
-  if (oldUser && !localStorage.getItem(USER_KEY)) {
-    localStorage.setItem(USER_KEY, oldUser)
-  }
+const LEGACY_LOCAL_KEYS = ['token', 'refresh_token', 'user_data']
+const LEGACY_COOKIE_NAMES = ['authToken', 'access_token', 'refresh_token', 'user_data']
 
-  removeCookie(ACCESS_TOKEN_KEY)
-  removeCookie('access_token')
-  removeCookie(REFRESH_TOKEN_KEY)
-  removeCookie('refresh_token')
-  removeCookie(USER_KEY)
+// One-time cleanup: purge any tokens the old frontend wrote to localStorage
+// or non-httpOnly cookies. document.cookie can only touch the non-httpOnly
+// copies, so the server's httpOnly cookies are never affected.
+const purgeLegacyTokenStorage = () => {
+  try {
+    LEGACY_LOCAL_KEYS.forEach((key) => localStorage.removeItem(key))
+  } catch { /* ignore */ }
+  LEGACY_COOKIE_NAMES.forEach((name) => {
+    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Lax`
+  })
 }
-migrateFromCookies()
+purgeLegacyTokenStorage()
 
-// Access token
-export const getStoredToken = () => localStorage.getItem(ACCESS_TOKEN_KEY)
-
-export const setStoredToken = (token) => {
-  if (token) {
-    localStorage.setItem(ACCESS_TOKEN_KEY, token)
-  } else {
-    localStorage.removeItem(ACCESS_TOKEN_KEY)
-  }
+const getCookie = (name) => {
+  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const match = document.cookie.match(new RegExp(`(?:^|; )${escaped}=([^;]*)`))
+  return match ? decodeURIComponent(match[1]) : null
 }
 
-export const clearStoredToken = () => localStorage.removeItem(ACCESS_TOKEN_KEY)
-
-// Refresh token
-export const getStoredRefreshToken = () => localStorage.getItem(REFRESH_TOKEN_KEY)
-
-export const setStoredRefreshToken = (token) => {
-  if (token) {
-    localStorage.setItem(REFRESH_TOKEN_KEY, token)
-  } else {
-    localStorage.removeItem(REFRESH_TOKEN_KEY)
-  }
-}
-
-export const clearStoredRefreshToken = () => localStorage.removeItem(REFRESH_TOKEN_KEY)
-
-// User data
-export const getStoredUser = () => {
-  const raw = localStorage.getItem(USER_KEY)
-  if (!raw) return null
-  try { return JSON.parse(raw) } catch { return null }
-}
-
-export const setStoredUser = (userData) => {
-  if (!userData) { localStorage.removeItem(USER_KEY); return }
-  localStorage.setItem(USER_KEY, JSON.stringify(userData))
-}
-
-export const clearStoredUser = () => localStorage.removeItem(USER_KEY)
-
-let token = getStoredToken()
-
-// Sync token into a non-httpOnly cookie so middleware can find it via req.cookies.authToken
-const syncAuthCookie = (tokenValue) => {
-  if (tokenValue) {
-    document.cookie = `authToken=${encodeURIComponent(tokenValue)}; path=/; SameSite=Lax`
-  }
-}
-if (token) syncAuthCookie(token)
-
-const setAuthCookie = (tokenValue) => {
-  if (tokenValue) {
-    document.cookie = `authToken=${encodeURIComponent(tokenValue)}; path=/; SameSite=Lax`
-  } else {
-    document.cookie = 'authToken=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/'
-  }
-}
-
-const clearAuthCookie = () => {
-  document.cookie = 'authToken=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/'
-}
+// Access token held in memory ONLY (survives refresh, never persisted)
+let token = null
 
 export const setAuthToken = (newToken) => {
-  token = newToken
-  setStoredToken(newToken)
-  setAuthCookie(newToken)
+  token = newToken || null
 }
 
 export const getAuthToken = () => token
 
 export const clearAuthToken = () => {
   token = null
-  clearStoredToken()
-  clearStoredRefreshToken()
-  clearAuthCookie()
 }
 
 // Callback for when token refresh fails (e.g., dispatch logout)
@@ -140,6 +70,13 @@ const attachAuthInterceptor = (instance) => {
     (config) => {
       if (token) {
         config.headers.Authorization = `Bearer ${token}`
+      }
+      const method = (config.method || 'get').toUpperCase()
+      if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
+        const csrf = getCookie('XSRF-TOKEN')
+        if (csrf) {
+          config.headers['X-CSRF-Token'] = csrf
+        }
       }
       return config
     },
@@ -193,8 +130,6 @@ const attachAuthInterceptor = (instance) => {
 
   return instance
 }
-
-const API_BASE_URL = '/api'
 
 export const apiClient = attachAuthInterceptor(axios.create({
   baseURL: API_BASE_URL,

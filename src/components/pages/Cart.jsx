@@ -4,6 +4,7 @@ import BrandLoader from '../BrandLoader';
 import { ShoppingCart, Trash2, Plus, Minus, ArrowRight, ShoppingBag, Loader2 } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useToast } from '../ui/Toast';
+import { DELIVERY_FEE, FREE_DELIVERY_THRESHOLD } from '../../utils/orderBreakdown';
 import { 
   fetchCartItems, 
   updateCartQuantity, 
@@ -70,8 +71,9 @@ const Cart = () => {
         const finalPrice = discount ? (price * (1 - discount / 100)) : price;
         return acc + (finalPrice * item.quantity);
     }, 0));
-  const shipping = 0;
-  const total = subtotal;
+  const deliveryFee = subtotal > FREE_DELIVERY_THRESHOLD ? 0 : DELIVERY_FEE;
+  const platformFee = 0;
+  const total = subtotal + deliveryFee + platformFee;
 
     if (loading) return (
         <div className="min-h-screen flex items-center justify-center">
@@ -80,40 +82,42 @@ const Cart = () => {
     );
 
   return (
-    <div className="min-h-screen bg-gray-50 py-6 sm:py-12 px-3 sm:px-4">
+    <div className="min-h-screen page-bg py-6 sm:py-12 px-3 sm:px-4">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between gap-3 mb-6 sm:mb-8">
             <div className="flex items-center gap-2 sm:gap-3">
-                <ShoppingCart className="text-indigo-600 w-6 h-6 sm:w-8 sm:h-8" size={32} />
+                <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-rose-500 to-pink-700 flex items-center justify-center shadow-lg shadow-pink-500/30">
+                    <ShoppingCart className="text-white w-6 h-6" />
+                </div>
                 <div>
-                    <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">Cart</h1>
-                    <span className="bg-indigo-100 text-indigo-700 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm font-bold">
+                    <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-gray-900">Your Cart</h1>
+                    <span className="chip bg-gradient-to-r from-rose-100 to-pink-100 text-pink-700 font-bold mt-1">
                         {cartItems.length} Items
                     </span>
                 </div>
             </div>
             <button 
                 onClick={() => dispatch(fetchCartItems())}
-                className="px-3 sm:px-4 py-1.5 sm:py-2 bg-indigo-100 text-indigo-600 rounded-xl font-semibold hover:bg-indigo-200 transition text-sm"
+                className="px-4 py-2 bg-white text-pink-600 rounded-xl font-semibold border border-pink-100 shadow-sm hover:bg-pink-50 transition text-sm"
             >
                 Refresh
             </button>
         </div>
 
         {error && (
-            <div className="bg-red-50 border border-red-200 rounded-2xl p-4 mb-6">
-                <p className="text-red-700 font-semibold">Error: {error}</p>
+            <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 mb-6">
+                <p className="text-rose-700 font-semibold">Error: {error}</p>
             </div>
         )}
 
         {cartItems.length === 0 ? (
-            <div className="bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-12 text-center shadow-sm border border-gray-100">
-                <div className="bg-indigo-50 w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
-                    <ShoppingBag className="text-indigo-600 w-6 h-6 sm:w-8 sm:h-8" size={32} />
+            <div className="card p-6 sm:p-12 text-center">
+                <div className="bg-gradient-to-br from-rose-100 via-pink-100 to-pink-100 w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6 shadow-inner">
+                    <ShoppingBag className="text-pink-600 w-6 h-6 sm:w-8 sm:h-8" />
                 </div>
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Your cart is empty</h2>
+                <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 mb-2">Your cart is empty</h2>
                 <p className="text-gray-500 mb-6 sm:mb-8 text-sm sm:text-base">Looks like you haven't added anything to your cart yet.</p>
-                <Link to="/" className="inline-flex items-center gap-2 bg-indigo-600 text-white px-6 sm:px-8 py-2.5 sm:py-3 rounded-xl font-bold hover:bg-indigo-700 transition text-sm sm:text-base">
+                <Link to="/" className="btn-gradient text-sm sm:text-base px-8 py-3">
                     Start Shopping <ArrowRight size={16} />
                 </Link>
             </div>
@@ -127,30 +131,35 @@ const Cart = () => {
                         const maxQuantity = sizeInfo ? sizeInfo.quantity : 0;
 
                         return (
-                        <div key={`${item.productId?._id}-${item.size}`} className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-sm border border-gray-100 flex gap-3 sm:gap-4 items-center">
-                            <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-lg sm:rounded-xl overflow-hidden bg-gray-50 flex-shrink-0">
+                        <div key={`${item.productId?._id}-${item.size}`} className="card card-hover p-3 sm:p-4 flex gap-3 sm:gap-4 items-center">
+                            <Link
+                                to={`/product/${item.productId?._id || item.productId?.id}`}
+                                className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-xl overflow-hidden bg-slate-50 flex-shrink-0 ring-1 ring-slate-100 block"
+                            >
                                 <img
                                     src={Array.isArray(item.productId?.image) ? (item.productId.image[0]?.url || item.productId.image[0]) : item.productId?.image}
                                     alt={item.productId?.name} 
                                     className="w-full h-full object-cover"
                                 />
-                            </div>
+                            </Link>
                             
                             <div className="flex-1 min-w-0">
-                                <h3 className="font-bold text-gray-900 text-sm sm:text-base truncate">{item.productId?.name}</h3>
+                                <Link to={`/product/${item.productId?._id || item.productId?.id}`} className="block">
+                                    <h3 className="font-bold text-gray-900 text-sm sm:text-base truncate hover:text-pink-600 transition">{item.productId?.name}</h3>
+                                </Link>
                                 <p className="text-gray-500 text-xs sm:text-sm mb-1 sm:mb-2">Size: {item.size || 'N/A'}</p>
                                 <div className="flex items-center gap-2 sm:gap-4">
-                                    <div className="flex items-center border rounded-lg">
+                                    <div className="flex items-center border border-slate-200 rounded-xl overflow-hidden bg-white">
                                         <button 
                                             onClick={() => handleUpdateQuantity(item.productId?._id, item.quantity - 1, item.size)}
-                                            className="p-1 hover:bg-gray-100 transition"
+                                            className="p-2 hover:bg-pink-50 text-slate-600 transition"
                                         >
                                             <Minus size={14} />
                                         </button>
-                                        <span className="px-2 sm:px-3 font-medium text-xs sm:text-sm">{item.quantity}</span>
+                                        <span className="px-2 sm:px-3 font-semibold text-xs sm:text-sm">{item.quantity}</span>
                                         <button 
                                             onClick={() => handleUpdateQuantity(item.productId?._id, item.quantity + 1, item.size)}
-                                            className="p-1 hover:bg-gray-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                            className="p-2 hover:bg-pink-50 text-slate-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
                                             disabled={sizeInfo && item.quantity >= maxQuantity}
                                         >
                                             <Plus size={14} />
@@ -158,7 +167,7 @@ const Cart = () => {
                                     </div>
                                     <button 
                                         onClick={() => handleRemoveFromCart(item.productId?._id, item.size)}
-                                        className="text-red-500 hover:text-red-600 transition p-1"
+                                        className="text-rose-500 hover:text-rose-600 transition p-1.5 hover:bg-rose-50 rounded-lg"
                                     >
                                         <Trash2 size={16} />
                                     </button>
@@ -166,7 +175,7 @@ const Cart = () => {
                             </div>
 
                             <div className="text-right flex-shrink-0">
-                                <p className="font-bold text-indigo-600 text-sm sm:text-base">
+                                <p className="font-extrabold gradient-text text-sm sm:text-base">
                                     ₹{Math.round((item.productId?.discount 
                                         ? (item.productId.price * (1 - item.productId.discount / 100)) 
                                         : (item.productId?.price || 0)) * item.quantity)}
@@ -182,26 +191,33 @@ const Cart = () => {
 
                 {/* Order Summary */}
                 <div className="lg:col-span-1">
-                    <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-sm border border-gray-100 sticky top-24">
-                        <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">Order Summary</h2>
+                    <div className="card p-4 sm:p-6 sticky top-24 border-pink-50">
+                        <h2 className="text-lg sm:text-xl font-extrabold text-gray-900 mb-4 sm:mb-6 flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-gradient-to-r from-rose-500 to-pink-600 inline-block" />
+                            Order Summary
+                        </h2>
                         <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-6">
                             <div className="flex justify-between text-gray-600 text-sm sm:text-base">
                                 <span>Subtotal</span>
                                 <span className="font-semibold text-gray-900">₹{subtotal}</span>
                             </div>
                             <div className="flex justify-between text-gray-600 text-sm sm:text-base">
-                                <span>Shipping</span>
-                                <span className="font-semibold text-gray-900">FREE</span>
+                                <span>Delivery Fee</span>
+                                <span className="font-semibold text-gray-900">{deliveryFee > 0 ? `₹${deliveryFee}` : 'FREE'}</span>
                             </div>
-                            <div className="border-t pt-3 sm:pt-4 flex justify-between items-center">
-                                <span className="text-base sm:text-lg font-bold text-gray-900">Total</span>
-                                <span className="text-xl sm:text-2xl font-bold text-indigo-600">₹{total}</span>
+                            <div className="flex justify-between text-gray-600 text-sm sm:text-base">
+                                <span>Platform Fee</span>
+                                <span className="font-semibold text-gray-900">{platformFee > 0 ? `₹${platformFee}` : 'FREE'}</span>
+                            </div>
+                            <div className="border-t border-slate-100 pt-3 sm:pt-4 flex justify-between items-center">
+                                <span className="text-base sm:text-lg font-extrabold text-gray-900">Total</span>
+                                <span className="text-xl sm:text-2xl font-extrabold gradient-text">₹{total}</span>
                             </div>
                         </div>
                         <button 
                             onClick={handleCheckout}
                             disabled={loading}
-                            className="w-full bg-gray-900 text-white py-3 sm:py-4 rounded-xl sm:rounded-2xl font-bold hover:bg-black transition flex items-center justify-center gap-2 mb-3 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+                            className="btn-gradient w-full !py-3.5 !text-base mb-3"
                         >
                             {loading ? (
                                 <><Loader2 className="animate-spin" size={20} /> Processing...</>
@@ -217,12 +233,12 @@ const Cart = () => {
                                     });
                                 }
                             }}
-                            className="w-full bg-red-50 text-red-600 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl font-bold hover:bg-red-100 transition text-sm"
+                            className="w-full bg-rose-50 text-rose-600 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl font-bold hover:bg-rose-100 transition text-sm"
                         >
                             Clear Cart
                         </button>
                         <p className="text-center text-[10px] sm:text-xs text-gray-400 mt-3 sm:mt-4">
-                            Free shipping on all orders
+                            Delivery fee ₹{DELIVERY_FEE} applies on orders up to ₹{FREE_DELIVERY_THRESHOLD}. Free delivery on orders above ₹{FREE_DELIVERY_THRESHOLD}!
                         </p>
                     </div>
                 </div>

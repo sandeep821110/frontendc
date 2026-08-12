@@ -113,14 +113,16 @@ const VisualSearchModal = ({ isOpen, onClose }) => {
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/70" onClick={handleClose} />
-      <div className="relative bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700">
-          <h3 className="text-white font-semibold text-sm flex items-center gap-2">
-            <Camera className="w-4 h-4 text-indigo-400" />
+      <div className="absolute inset-0 bg-slate-950/50 backdrop-blur-sm" onClick={handleClose} />
+      <div className="relative bg-white rounded-3xl shadow-2xl shadow-pink-500/20 ring-1 ring-slate-100 w-full max-w-lg mx-4 overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+          <h3 className="text-slate-900 font-semibold text-sm flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-rose-500 via-pink-600 to-pink-700 flex items-center justify-center text-white">
+              <Camera className="w-4 h-4" />
+            </div>
             Search by Image
           </h3>
-          <button onClick={handleClose} className="text-gray-400 hover:text-white p-1">
+          <button onClick={handleClose} className="text-slate-400 hover:text-slate-700 p-1">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -131,22 +133,22 @@ const VisualSearchModal = ({ isOpen, onClose }) => {
             <div className="space-y-3">
               <button
                 onClick={startCamera}
-                className="w-full flex items-center justify-center gap-3 px-4 py-6 bg-indigo-600/20 border-2 border-dashed border-indigo-500/50 rounded-xl text-indigo-300 hover:bg-indigo-600/30 transition"
+                className="w-full flex items-center justify-center gap-3 px-4 py-6 bg-gradient-to-r from-rose-50 to-pink-50 border-2 border-dashed border-pink-400 rounded-xl text-pink-600 hover:bg-pink-100/50 transition"
               >
                 <Camera className="w-8 h-8" />
                 <div className="text-left">
                   <p className="font-medium">Open Camera</p>
-                  <p className="text-xs text-gray-400">Take a photo of clothing</p>
+                  <p className="text-xs text-slate-400">Take a photo of clothing</p>
                 </div>
               </button>
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full flex items-center justify-center gap-3 px-4 py-6 bg-gray-800 border-2 border-dashed border-gray-600 rounded-xl text-gray-300 hover:bg-gray-750 transition"
+                className="w-full flex items-center justify-center gap-3 px-4 py-6 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl text-slate-600 hover:bg-slate-100 transition"
               >
                 <Upload className="w-8 h-8" />
                 <div className="text-left">
                   <p className="font-medium">Upload Image</p>
-                  <p className="text-xs text-gray-400">Choose from gallery</p>
+                  <p className="text-xs text-slate-400">Choose from gallery</p>
                 </div>
               </button>
               <input
@@ -162,19 +164,19 @@ const VisualSearchModal = ({ isOpen, onClose }) => {
           {/* Camera mode: live viewfinder */}
           {mode === 'camera' && (
             <div className="space-y-3">
-              <div className="relative bg-black rounded-xl overflow-hidden">
+              <div className="relative bg-slate-900 rounded-xl overflow-hidden">
                 <video ref={videoRef} autoPlay playsInline className="w-full h-64 object-cover" />
               </div>
               <div className="flex gap-2">
                 <button
                   onClick={() => { stopCamera(); setMode('select'); }}
-                  className="flex-1 px-4 py-2.5 bg-gray-700 text-white rounded-lg text-sm font-medium hover:bg-gray-600 transition"
+                  className="btn-outline flex-1 !py-2.5 !text-sm"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={capturePhoto}
-                  className="flex-1 px-4 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-500 transition"
+                  className="btn-gradient flex-1 !py-2.5 !text-sm"
                 >
                   Capture & Search
                 </button>
@@ -186,24 +188,24 @@ const VisualSearchModal = ({ isOpen, onClose }) => {
           {mode === 'preview' && previewUrl && (
             <div className="space-y-3">
               <div className="flex gap-3">
-                <div className="w-24 h-24 flex-shrink-0 bg-black rounded-xl overflow-hidden">
+                <div className="w-24 h-24 flex-shrink-0 bg-slate-100 rounded-xl overflow-hidden ring-1 ring-slate-100">
                   <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
                 </div>
                 <div className="flex-1 min-w-0">
                   {loading ? (
                     <div className="flex items-center gap-2 h-full">
-                      <Loader2 className="w-5 h-5 animate-spin text-indigo-400 flex-shrink-0" />
+                      <Loader2 className="w-5 h-5 animate-spin text-pink-500 flex-shrink-0" />
                       <div>
-                        <p className="text-sm text-gray-200 font-medium">Analyzing image...</p>
-                        <p className="text-xs text-gray-500">Identifying clothing type</p>
+                        <p className="text-sm text-slate-700 font-medium">Analyzing image...</p>
+                        <p className="text-xs text-slate-400">Identifying clothing type</p>
                       </div>
                     </div>
                   ) : (
                     <div className="h-full flex flex-col justify-center">
-                      <p className="text-sm text-gray-200 font-medium">
+                      <p className="text-sm text-slate-700 font-medium">
                         {results.length} result{results.length !== 1 ? 's' : ''} found
                       </p>
-                      <button onClick={reset} className="text-xs text-indigo-400 hover:text-indigo-300 mt-1 w-fit">
+                      <button onClick={reset} className="text-xs text-pink-600 hover:text-pink-500 mt-1 w-fit">
                         Try another image
                       </button>
                     </div>
@@ -213,8 +215,8 @@ const VisualSearchModal = ({ isOpen, onClose }) => {
 
               {error && (
                 <div className="text-center">
-                  <p className="text-xs text-red-400">{error}</p>
-                  <button onClick={reset} className="text-xs text-indigo-400 hover:text-indigo-300 mt-1">
+                  <p className="text-xs text-rose-500">{error}</p>
+                  <button onClick={reset} className="text-xs text-pink-600 hover:text-pink-500 mt-1">
                     Try again
                   </button>
                 </div>
@@ -230,29 +232,29 @@ const VisualSearchModal = ({ isOpen, onClose }) => {
                         <button
                           key={product._id || product.productId}
                           onClick={() => handleProductClick(product)}
-                          className="flex flex-col items-start gap-1 p-2 rounded-lg bg-gray-800 hover:bg-gray-750 transition text-left"
+                          className="flex flex-col items-start gap-1 p-2 rounded-xl bg-slate-50 hover:bg-pink-50/50 ring-1 ring-slate-100 transition text-left"
                         >
                           {img && (
-                            <img src={img} alt="" className="w-full h-24 rounded-lg object-cover bg-gray-700" loading="lazy" />
+                            <img src={img} alt="" className="w-full h-24 rounded-lg object-cover bg-slate-100" loading="lazy" />
                           )}
-                          <p className="text-xs font-medium text-gray-200 truncate w-full">{product.name}</p>
-                          <p className="text-xs text-indigo-400 font-semibold">₹{Math.round(price)}</p>
+                          <p className="text-xs font-medium text-slate-700 truncate w-full">{product.name}</p>
+                          <p className="text-xs text-pink-600 font-semibold">₹{Math.round(price)}</p>
                         </button>
                       );
                     })}
                   </div>
                   {results.length > 8 && (
-                    <p className="text-xs text-gray-500 text-center">+{results.length - 8} more results</p>
+                    <p className="text-xs text-slate-400 text-center">+{results.length - 8} more results</p>
                   )}
                 </div>
               )}
 
               {results.length === 0 && !loading && !error && (
                 <div className="text-center py-4">
-                  <ImageIcon className="w-8 h-8 mx-auto text-gray-600 mb-2" />
-                  <p className="text-sm text-gray-400">No matching products found</p>
-                  <p className="text-xs text-gray-600 mt-1">Try a different angle or clothing item</p>
-                  <button onClick={reset} className="mt-3 text-sm text-indigo-400 hover:text-indigo-300 font-medium">
+                  <ImageIcon className="w-8 h-8 mx-auto text-slate-300 mb-2" />
+                  <p className="text-sm text-slate-500">No matching products found</p>
+                  <p className="text-xs text-slate-400 mt-1">Try a different angle or clothing item</p>
+                  <button onClick={reset} className="mt-3 text-sm text-pink-600 hover:text-pink-500 font-medium">
                     Try another image
                   </button>
                 </div>

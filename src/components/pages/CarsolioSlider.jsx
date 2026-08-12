@@ -52,7 +52,7 @@ const CarsolioSlider = () => {
 
   if (loading) {
     return (
-      <div className="aspect-[4/2.5] sm:aspect-[16/6] md:aspect-[21/8] flex items-center justify-center bg-gray-100">
+      <div className="aspect-[4/2] sm:aspect-[16/5] md:aspect-[21/8] flex items-center justify-center bg-gradient-to-br from-slate-100 via-pink-50 to-slate-100">
         <BrandLoader text="Loading banner..." />
       </div>
     );
@@ -62,7 +62,7 @@ const CarsolioSlider = () => {
 
   return (
     <div
-      className="relative w-full aspect-[4/2.5] sm:aspect-[16/6] md:aspect-[21/8] overflow-hidden group bg-gray-900 rounded-none sm:rounded-2xl shadow-lg"
+      className="relative w-full aspect-[4/2] sm:aspect-[16/5] md:aspect-[21/8] overflow-hidden group bg-slate-950 rounded-none shadow-2xl shadow-pink-200/60 ring-1 ring-slate-900/5"
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
     >
@@ -73,23 +73,15 @@ const CarsolioSlider = () => {
         {slides.map((slide, index) => (
           <div
             key={slide.id || index}
-            className="relative min-w-full h-full cursor-pointer flex items-center justify-center bg-gray-900"
+            className="relative min-w-full h-full cursor-pointer flex items-center justify-center bg-slate-950"
             onClick={() => navigate('/products')}
           >
             <img
               src={slide.url}
               alt={slide.title}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover transition-transform duration-[2s] group-hover:scale-105"
               loading={index === 0 ? 'eager' : 'lazy'}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
-            {slide.title && (
-              <div className="absolute bottom-4 sm:bottom-8 left-4 sm:left-8 right-4 sm:right-8 pointer-events-none">
-                <h3 className="text-white text-sm sm:text-lg md:text-xl font-bold drop-shadow-lg">
-                  {slide.title}
-                </h3>
-              </div>
-            )}
           </div>
         ))}
       </div>
@@ -98,13 +90,15 @@ const CarsolioSlider = () => {
         <>
           <button
             onClick={prevSlide}
-            className="absolute top-1/2 -translate-y-1/2 left-2 sm:left-4 z-20 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-black/30 hover:bg-black/50 text-white backdrop-blur-sm transition-all opacity-0 md:group-hover:opacity-100 flex items-center justify-center text-lg"
+            className="absolute top-1/2 -translate-y-1/2 left-2 sm:left-4 z-20 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-white/15 hover:bg-white/25 text-white backdrop-blur-md border border-white/20 transition-all hover:scale-110 opacity-0 md:group-hover:opacity-100 flex items-center justify-center"
+            aria-label="Previous slide"
           >
             <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
           </button>
           <button
             onClick={nextSlide}
-            className="absolute top-1/2 -translate-y-1/2 right-2 sm:right-4 z-20 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-black/30 hover:bg-black/50 text-white backdrop-blur-sm transition-all opacity-0 md:group-hover:opacity-100 flex items-center justify-center text-lg"
+            className="absolute top-1/2 -translate-y-1/2 right-2 sm:right-4 z-20 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-white/15 hover:bg-white/25 text-white backdrop-blur-md border border-white/20 transition-all hover:scale-110 opacity-0 md:group-hover:opacity-100 flex items-center justify-center"
+            aria-label="Next slide"
           >
             <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
           </button>
@@ -113,9 +107,10 @@ const CarsolioSlider = () => {
               <button
                 key={i}
                 onClick={() => setCurrentSlide(i)}
+                aria-label={`Go to slide ${i + 1}`}
                 className={`transition-all duration-300 rounded-full ${
                   currentSlide === i
-                    ? 'w-6 sm:w-8 h-2 bg-white shadow-md'
+                    ? 'w-6 sm:w-8 h-2 bg-gradient-to-r from-rose-400 to-pink-500 shadow-md'
                     : 'w-2 h-2 bg-white/40 hover:bg-white/70'
                 }`}
               />

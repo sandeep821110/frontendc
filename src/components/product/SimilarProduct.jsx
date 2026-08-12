@@ -8,17 +8,13 @@ const SimilarProduct = ({ category, subCategory, currentProductId }) => {
   useEffect(() => {
     const fetchSimilarProducts = async () => {
       try {
-        // Fetch all products and filter by category/subcategory
-        const res = await axios.get('/api/products');
+        const res = await axios.get('/api/products', { params: { limit: 100 } });
         const products = res.data.success && Array.isArray(res.data.data) ? res.data.data : (Array.isArray(res.data) ? res.data : []);
-        const seen = new Set();
-        const filtered = products
-          .filter(product => {
-            const id = String(product._id || product.id);
-            if (id === String(currentProductId) || seen.has(id)) return false;
-            seen.add(id);
-            return product.category === category || product.subCategory === subCategory;
-          });
+        const filtered = products.filter((product) => {
+          const id = String(product._id || product.id);
+          if (id === String(currentProductId)) return false;
+          return product.category === category || product.subCategory === subCategory;
+        });
 
         // Limit to 4 products
         setSimilarProducts(filtered.slice(0, 4));
@@ -36,7 +32,10 @@ const SimilarProduct = ({ category, subCategory, currentProductId }) => {
 
   return (
     <div className="mt-8 sm:mt-16 px-4 sm:px-6 lg:px-8">
-      <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-8">Similar Products</h2>
+      <div className="flex flex-col items-start gap-2 mb-4 sm:mb-8">
+        <span className="section-badge">You may also like</span>
+        <h2 className="text-xl sm:text-2xl font-bold section-title gradient-text">Similar Products</h2>
+      </div>
       <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 lg:gap-8">
         {similarProducts.map(product => (
           <ProductCard key={product._id || product.id} product={product} />

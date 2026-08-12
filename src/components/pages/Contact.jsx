@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Mail, Phone, MapPin, Send, User, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
@@ -72,7 +72,7 @@ const Contact = () => {
     }
   };
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen page-bg">
       {/* Hero Section */}
       <div className="relative h-[180px] sm:h-[220px] md:h-[300px] flex items-center justify-center overflow-hidden">
         <img 
@@ -80,10 +80,11 @@ const Contact = () => {
           alt="Contact Us" 
           className="absolute inset-0 w-full h-full object-cover" 
         />
-        <div className="absolute inset-0 bg-black/60"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-rose-900/80 via-pink-900/70 to-pink-900/80"></div>
         <div className="relative z-10 text-center px-4">
+          <span className="section-badge !bg-white/10 !text-white !from-white/10 !to-white/10 mb-4">We're here for you</span>
           <h1 className="text-3xl sm:text-4xl md:text-6xl font-extrabold text-white mb-2 sm:mb-4">Get In Touch</h1>
-          <p className="text-sm sm:text-base md:text-xl text-gray-200 max-w-2xl mx-auto">We're here to help you find your perfect mood.</p>
+          <p className="text-sm sm:text-base md:text-xl text-rose-100 max-w-2xl mx-auto">We're here to help you find your perfect mood.</p>
         </div>
       </div>
 
@@ -92,7 +93,7 @@ const Contact = () => {
           {/* Contact Information */}
           <div className="space-y-8">
             <div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-4">Contact Information</h2>
+              <h2 className="text-3xl font-bold section-title gradient-text mb-4">Contact Information</h2>
               <p className="text-gray-600 text-lg">
                 Have questions about our collections or your order? Our team is ready to assist you.
               </p>
@@ -100,7 +101,7 @@ const Contact = () => {
 
             <div className="space-y-6">
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600 shrink-0">
+                <div className="w-12 h-12 bg-gradient-to-br from-rose-500 via-pink-600 to-pink-700 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-pink-500/30 shrink-0">
                   <Phone size={24} />
                 </div>
                 <div>
@@ -111,7 +112,7 @@ const Contact = () => {
               </div>
 
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600 shrink-0">
+                <div className="w-12 h-12 bg-gradient-to-br from-rose-500 via-pink-600 to-pink-700 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-pink-500/30 shrink-0">
                   <Mail size={24} />
                 </div>
                 <div>
@@ -122,7 +123,7 @@ const Contact = () => {
               </div>
 
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600 shrink-0">
+                <div className="w-12 h-12 bg-gradient-to-br from-rose-500 via-pink-600 to-pink-700 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-pink-500/30 shrink-0">
                   <MapPin size={24} />
                 </div>
                 <div>
@@ -135,35 +136,35 @@ const Contact = () => {
           </div>
 
           {/* Contact Form */}
-          <div className="bg-gray-50 p-6 sm:p-8 md:p-10 rounded-2xl sm:rounded-3xl border border-gray-100 shadow-sm">
+          <div className="card rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-10 shadow-2xl shadow-pink-200/50 ring-1 ring-pink-100">
             {!isAuthenticated && (
-              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl flex items-center gap-2">
-                <AlertCircle className="text-blue-600" size={20} />
+              <div className="mb-6 p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-center gap-2">
+                <AlertCircle className="text-rose-500" size={20} />
                 <div>
-                  <span className="text-blue-700 font-semibold">Login required</span>
-                  <p className="text-sm text-blue-600">Please <button onClick={() => navigate('/login')} className="underline font-bold hover:no-underline">login</button> to send a message</p>
+                  <span className="text-rose-600 font-semibold">Login required</span>
+                  <p className="text-sm text-rose-500">Please <button onClick={() => navigate('/login')} className="underline font-bold hover:no-underline">login</button> to send a message</p>
                 </div>
               </div>
             )}
             
             {success && (
-              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-2">
+              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-2xl flex items-center gap-2">
                 <CheckCircle className="text-green-600" size={20} />
                 <span className="text-green-700 font-semibold">Message sent successfully! We'll get back to you soon.</span>
               </div>
             )}
             
             {error && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2">
-                <AlertCircle className="text-red-600" size={20} />
-                <span className="text-red-700 font-semibold">{error}</span>
+              <div className="mb-6 p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-center gap-2">
+                <AlertCircle className="text-rose-600" size={20} />
+                <span className="text-rose-700 font-semibold">{error}</span>
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2 relative">
-                  <label className="text-sm font-bold text-gray-700 ml-1">Full Name</label>
+                  <label className="label !text-sm !font-bold text-gray-700 ml-1">Full Name</label>
                   <div className="relative">
                     <User className="absolute left-4 top-3.5 text-gray-400" size={18} />
                     <input 
@@ -172,13 +173,13 @@ const Contact = () => {
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       disabled={!isAuthenticated}
-                      className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 outline-none transition disabled:bg-gray-100 disabled:cursor-not-allowed" 
+                      className="input !py-3.5 pl-11 disabled:bg-gray-100 disabled:cursor-not-allowed" 
                       required 
                     />
                   </div>
                 </div>
                 <div className="space-y-2 relative">
-                  <label className="text-sm font-bold text-gray-700 ml-1">Phone Number</label>
+                  <label className="label !text-sm !font-bold text-gray-700 ml-1">Phone Number</label>
                   <div className="relative">
                     <Phone className="absolute left-4 top-3.5 text-gray-400" size={18} />
                     <input 
@@ -187,14 +188,14 @@ const Contact = () => {
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       disabled={!isAuthenticated}
-                      className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 outline-none transition disabled:bg-gray-100 disabled:cursor-not-allowed" 
+                      className="input !py-3.5 pl-11 disabled:bg-gray-100 disabled:cursor-not-allowed" 
                       required 
                     />
                   </div>
                 </div>
               </div>
               <div className="space-y-2 relative">
-                <label className="text-sm font-bold text-gray-700 ml-1">Email Address</label>
+                <label className="label !text-sm !font-bold text-gray-700 ml-1">Email Address</label>
                 <div className="relative">
                   <Mail className="absolute left-4 top-3.5 text-gray-400" size={18} />
                   <input 
@@ -203,27 +204,27 @@ const Contact = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     disabled={!isAuthenticated}
-                    className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 outline-none transition disabled:bg-gray-100 disabled:cursor-not-allowed" 
+                    className="input !py-3.5 pl-11 disabled:bg-gray-100 disabled:cursor-not-allowed" 
                     required 
                   />
                 </div>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700 ml-1">Message</label>
+                <label className="label !text-sm !font-bold text-gray-700 ml-1">Message</label>
                 <textarea 
                   rows={4} 
                   placeholder="Your message here..." 
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   disabled={!isAuthenticated}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 outline-none transition resize-none disabled:bg-gray-100 disabled:cursor-not-allowed" 
+                  className="input !py-3 resize-none disabled:bg-gray-100 disabled:cursor-not-allowed" 
                   required
                 ></textarea>
               </div>
               <button 
                 type="submit" 
                 disabled={loading || !isAuthenticated}
-                className="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold hover:bg-indigo-700 transition flex items-center justify-center gap-2 shadow-lg shadow-indigo-100 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                className="btn-gradient w-full !py-4 !text-base !text-white disabled:!opacity-50 disabled:!cursor-not-allowed"
               >
                 {loading ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />}
                 {loading ? 'Sending...' : !isAuthenticated ? 'Login to Send Message' : 'Send Message'}

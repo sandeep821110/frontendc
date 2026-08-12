@@ -10,7 +10,7 @@ import { createApiClient, getAuthToken } from '../../services/apiClient';
 const addressApi = createApiClient('/api/address')
 const API_BASE_URL = '/api/address'
 
-const Address = ({ isModal = false }) => {
+const Address = ({ isModal = false, onClose }) => {
     const [addresses, setAddresses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -123,7 +123,8 @@ const Address = ({ isModal = false }) => {
 
             setShowForm(false);
             fetchAddresses();
-            navigate('/checkout');
+            if (onClose) onClose();
+            else navigate('/checkout');
         } catch (err) {
             const status = err.response?.status;
             const serverMsg = err.response?.data?.message || err.response?.data?.error;
@@ -133,23 +134,27 @@ const Address = ({ isModal = false }) => {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
-                <Loader2 className="animate-spin text-indigo-600" size={40} />
+            <div className="min-h-screen page-bg flex items-center justify-center">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-rose-500 via-pink-600 to-pink-700 flex items-center justify-center shadow-lg shadow-pink-500/30">
+                    <Loader2 className="animate-spin text-white" size={30} />
+                </div>
             </div>
         );
     }
 
   return (
-    <div className={isModal ? "bg-gray-50 h-full" : "min-h-screen bg-gray-50"}>
+    <div className={isModal ? "page-bg h-full" : "min-h-screen page-bg"}>
         <div className={`max-w-4xl mx-auto ${isModal ? 'p-4 sm:p-8' : 'py-6 sm:py-12 px-3 sm:px-4'}`}>
             <div className="flex justify-between items-center mb-4 sm:mb-8">
                 <div className="flex items-center gap-2 sm:gap-3">
-                    <MapPin className="text-indigo-600 w-6 h-6 sm:w-8 sm:h-8" size={32} />
-                    <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">Addresses</h1>
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-rose-500 via-pink-600 to-pink-700 flex items-center justify-center text-white shadow-lg shadow-pink-500/30 flex-shrink-0">
+                        <MapPin className="w-5 h-5 sm:w-6 sm:h-6" size={32} />
+                    </div>
+                    <h1 className="text-xl sm:text-2xl md:text-3xl font-bold section-title">Addresses</h1>
                 </div>
                 <button
                     onClick={handleAddNew}
-                    className="inline-flex items-center gap-1 sm:gap-2 bg-indigo-600 text-white px-3 sm:px-6 py-1.5 sm:py-2 rounded-xl font-bold hover:bg-indigo-700 transition text-sm sm:text-base"
+                    className="btn-gradient !px-3 sm:!px-6 !py-1.5 sm:!py-2 !text-sm sm:!text-base"
                 >
                     <Plus size={16} />
                     <span className="hidden sm:inline">Add New</span>
@@ -158,14 +163,14 @@ const Address = ({ isModal = false }) => {
             </div>
 
             {error && (
-                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2">
-                    <XCircle className="text-red-600" size={20} />
-                    <span className="text-red-700 font-semibold">{error}</span>
+                <div className="mb-6 p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-center gap-2">
+                    <XCircle className="text-rose-600" size={20} />
+                    <span className="text-rose-700 font-semibold">{error}</span>
                 </div>
             )}
 
             {showForm && (
-                <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-start z-50 p-2 sm:p-4 overflow-y-auto" onClick={() => setShowForm(false)}>
+                <div className="fixed inset-0 bg-slate-950/50 backdrop-blur-sm flex justify-center items-start z-50 p-2 sm:p-4 overflow-y-auto" onClick={() => setShowForm(false)}>
                     <AddressForm
                         address={currentAddress}
                         onSubmit={handleFormSubmit}
@@ -179,25 +184,25 @@ const Address = ({ isModal = false }) => {
 
             <div className="space-y-6">
                 {error && addresses.length === 0 ? (
-                    <div className="text-center bg-white p-6 sm:p-12 rounded-2xl">
-                        <XCircle className="text-red-400 mx-auto mb-3" size={40} />
-                        <p className="text-red-600 font-semibold text-lg">Failed to load addresses</p>
+                    <div className="text-center card rounded-3xl p-6 sm:p-12 shadow-2xl shadow-pink-200/50 ring-1 ring-pink-100">
+                        <XCircle className="text-rose-400 mx-auto mb-3" size={40} />
+                        <p className="text-rose-600 font-semibold text-lg">Failed to load addresses</p>
                         <p className="text-gray-500 mt-1 text-sm">Please check your connection and try again.</p>
                         <button
                             onClick={fetchAddresses}
-                            className="mt-4 inline-flex items-center gap-2 bg-indigo-600 text-white px-6 py-2 rounded-xl font-bold hover:bg-indigo-700 transition"
+                            className="mt-4 btn-gradient"
                         >
                             Retry
                         </button>
                     </div>
                 ) : addresses.length > 0 ? (
                     addresses.map(addr => (
-                        <div key={addr._id} className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100">
+                        <div key={addr._id} className="card card-hover rounded-2xl p-4 sm:p-6 shadow-2xl shadow-pink-200/40 ring-1 ring-pink-100">
                             <div className="flex justify-between items-start">
                                 <div>
                                     <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
                                         <p className="font-bold text-base sm:text-lg text-gray-800">{addr.fullName}</p>
-                                        {addr.isDefault && <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 text-xs font-bold rounded-full">Default</span>}
+                                        {addr.isDefault && <span className="chip bg-gradient-to-r from-rose-100 to-pink-100 text-pink-700 !text-xs font-bold">Default</span>}
                                     </div>
                                     <p className="text-gray-600">{addr.addressLine1}</p>
                                     <p className="text-gray-600">{addr.city} - {addr.pincode}</p>
@@ -206,15 +211,15 @@ const Address = ({ isModal = false }) => {
                                     <p className="text-gray-600 mt-2"><span className="font-semibold">Phone:</span> {addr.phoneNumber}</p>
                                 </div>
                                 <div className="flex gap-2">
-                                    <button onClick={() => handleEdit(addr)} className="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition"><Edit size={18} /></button>
-                                    <button onClick={() => handleDelete(addr._id)} className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition"><Trash2 size={18} /></button>
+                                    <button onClick={() => handleEdit(addr)} className="p-2 text-gray-500 hover:text-pink-600 hover:bg-pink-50 rounded-lg transition"><Edit size={18} /></button>
+                                    <button onClick={() => handleDelete(addr._id)} className="p-2 text-gray-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"><Trash2 size={18} /></button>
                                 </div>
                             </div>
                         </div>
                     ))
                 ) : (
                     !showForm && (
-                        <div className="text-center bg-white p-6 sm:p-12 rounded-2xl">
+                        <div className="text-center card rounded-3xl p-6 sm:p-12 shadow-2xl shadow-pink-200/50 ring-1 ring-pink-100">
                             <p className="text-gray-500 text-sm sm:text-base">You have no saved addresses.</p>
                         </div>
                     )
@@ -304,15 +309,15 @@ const AddressForm = ({ address, onSubmit, onCancel, isEditing, userEmail, formEr
     };
 
     return (
-        <div className="bg-white rounded-2xl p-4 sm:p-6 md:p-8 shadow-lg border border-gray-200 w-full max-w-2xl relative my-4 sm:my-8 mx-2 sm:mx-0" onClick={(e) => e.stopPropagation()}>
+        <div className="bg-white rounded-3xl p-4 sm:p-6 md:p-8 shadow-2xl shadow-pink-200/50 ring-1 ring-slate-100 w-full max-w-2xl relative my-4 sm:my-8 mx-2 sm:mx-0" onClick={(e) => e.stopPropagation()}>
             <button onClick={onCancel} className="absolute top-3 sm:top-4 right-3 sm:right-4 text-gray-400 hover:text-gray-600 transition-colors">
                 <XCircle size={22} />
             </button>
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">{isEditing ? 'Edit Address' : 'Add New Address'}</h2>
+            <h2 className="text-xl sm:text-2xl font-bold section-title gradient-text mb-4 sm:mb-6">{isEditing ? 'Edit Address' : 'Add New Address'}</h2>
             {formError && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
-                    <XCircle className="text-red-600 shrink-0" size={18} />
-                    <span className="text-red-700 text-sm font-semibold">{formError}</span>
+                <div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-2">
+                    <XCircle className="text-rose-600 shrink-0" size={18} />
+                    <span className="text-rose-700 text-sm font-semibold">{formError}</span>
                 </div>
             )}
             <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
@@ -332,7 +337,7 @@ const AddressForm = ({ address, onSubmit, onCancel, isEditing, userEmail, formEr
                             </div>
                         )}
                         {pincodeStatus === 'error' && (
-                            <div className="mt-2 flex items-center gap-2 text-sm text-red-600">
+                            <div className="mt-2 flex items-center gap-2 text-sm text-rose-600">
                                 <XCircle size={16} /> {pincodeError}
                             </div>
                         )}
@@ -347,14 +352,14 @@ const AddressForm = ({ address, onSubmit, onCancel, isEditing, userEmail, formEr
                 <InputField name="landmark" label="Landmark" value={formData.landmark || ''} onChange={handleInputChange} error={formErrors.landmark} />
                 <InputField name="phoneNumber" label="Phone Number" value={formData.phoneNumber || ''} onChange={handleInputChange} error={formErrors.phoneNumber} Icon={Phone} maxLength={10} />
                 <div className="flex items-center gap-2">
-                    <input type="checkbox" id="isDefault" name="isDefault" checked={formData.isDefault || false} onChange={handleInputChange} className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+                    <input type="checkbox" id="isDefault" name="isDefault" checked={formData.isDefault || false} onChange={handleInputChange} className="h-4 w-4 rounded border-gray-300 text-pink-600 focus:ring-pink-500" />
                     <label htmlFor="isDefault" className="text-sm text-gray-700">Set as default address</label>
                 </div>
                 <div className="flex justify-end gap-3 sm:gap-4 pt-3 sm:pt-4">
-                    <button type="button" onClick={onCancel} className="px-4 sm:px-6 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition text-sm sm:text-base">
+                    <button type="button" onClick={onCancel} className="btn-outline !text-sm sm:!text-base">
                         Cancel
                     </button>
-                    <button type="submit" disabled={submitting || isPincodeBlocked} className="px-4 sm:px-6 py-2 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base">
+                    <button type="submit" disabled={submitting || isPincodeBlocked} className="btn-gradient !text-sm sm:!text-base disabled:!opacity-50 disabled:!cursor-not-allowed">
                         {submitting ? <Loader2 className="animate-spin" size={18} /> : isPincodeBlocked ? 'Pincode Unavailable' : (isEditing ? 'Save' : 'Add')}
                     </button>
                 </div>
@@ -365,7 +370,7 @@ const AddressForm = ({ address, onSubmit, onCancel, isEditing, userEmail, formEr
 
 const InputField = ({ name, label, value, onChange, error, Icon, disabled, ...props }) => (
     <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-1">{label}{!disabled && name !== 'email' && ' *'}</label>
+        <label className="label !text-sm !font-semibold text-gray-700 mb-1">{label}{!disabled && name !== 'email' && ' *'}</label>
         <div className="relative">
             {Icon && <Icon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />}
             <input
@@ -374,11 +379,11 @@ const InputField = ({ name, label, value, onChange, error, Icon, disabled, ...pr
                 value={value}
                 onChange={onChange}
                 disabled={disabled}
-                className={`w-full py-2 border rounded-lg focus:outline-none transition ${Icon ? 'pl-9' : 'pl-3'} pr-3 ${disabled ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''} ${error ? 'border-red-500 focus:border-red-600' : 'border-gray-300 focus:border-indigo-500'}`}
+                className={`input ${Icon ? '!pl-9' : ''} ${disabled ? '!bg-gray-100 text-gray-500 cursor-not-allowed' : ''} ${error ? '!border-rose-400 focus:!ring-rose-400/40' : ''}`}
                 {...props}
             />
         </div>
-        {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+        {error && <p className="text-rose-500 text-xs mt-1">{error}</p>}
     </div>
 );
 
@@ -451,13 +456,13 @@ const AddressSelector = ({ onSelect, selectedId: initialSelectedId }) => {
     if (loading) return <div className="p-4"><BrandLoader text="Loading addresses..." /></div>;
     if (error) return (
         <div className="p-4">
-            <div className="flex items-center gap-2 text-red-600 mb-3">
+            <div className="flex items-center gap-2 text-rose-600 mb-3">
                 <XCircle size={20} />
                 <span className="font-semibold">{error}</span>
             </div>
             <button
                 onClick={fetchAddresses}
-                className="text-sm font-semibold text-indigo-600 hover:underline"
+                className="text-sm font-semibold text-pink-600 hover:underline"
             >
                 Retry
             </button>
@@ -467,7 +472,7 @@ const AddressSelector = ({ onSelect, selectedId: initialSelectedId }) => {
     return (
         <div className="space-y-4">
             {addresses.map(addr => (
-                <div key={addr._id} className={`p-4 border rounded-lg ${selectedId === addr._id ? 'border-indigo-600 bg-indigo-50' : 'border-gray-200'}`}>
+                <div key={addr._id} className={`p-4 border rounded-2xl transition ${selectedId === addr._id ? 'border-pink-500 bg-gradient-to-r from-rose-50/60 to-pink-50/60 shadow-lg shadow-pink-100' : 'border-slate-200 bg-white'}`}>
                     <div className="flex justify-between items-start">
                         <label className="flex-1 flex items-start cursor-pointer">
                             <input
@@ -475,7 +480,7 @@ const AddressSelector = ({ onSelect, selectedId: initialSelectedId }) => {
                                 name="selectedAddress"
                                 checked={selectedId === addr._id}
                                 onChange={() => handleSelect(addr)}
-                                className="mr-3 mt-1 h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
+                                className="mr-3 mt-1 h-4 w-4 text-pink-600 border-gray-300 focus:ring-pink-500"
                             />
                             <div>
                                 <span className="font-semibold">{addr.fullName}</span>
@@ -484,8 +489,8 @@ const AddressSelector = ({ onSelect, selectedId: initialSelectedId }) => {
                             </div>
                         </label>
                         <div className="flex gap-1">
-                            <button onClick={() => handleEdit(addr)} className="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition"><Edit size={18} /></button>
-                            <button onClick={() => handleDelete(addr._id)} className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition"><Trash2 size={18} /></button>
+                            <button onClick={() => handleEdit(addr)} className="p-2 text-gray-500 hover:text-pink-600 hover:bg-pink-50 rounded-lg transition"><Edit size={18} /></button>
+                            <button onClick={() => handleDelete(addr._id)} className="p-2 text-gray-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"><Trash2 size={18} /></button>
                         </div>
                     </div>
                 </div>

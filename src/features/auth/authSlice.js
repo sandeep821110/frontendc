@@ -1,15 +1,25 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import axios from 'axios'
-import { apiClient, setAuthToken, clearAuthToken, getStoredToken, setStoredRefreshToken, clearStoredRefreshToken, setStoredUser, getStoredUser, clearStoredUser } from '../../services/apiClient'
+import { apiClient, setAuthToken, clearAuthToken } from '../../services/apiClient'
 
 // Standalone refresh token function (useful for axios interceptors outside Redux)
+// Concurrent calls (StrictMode double effects, parallel 401 retries) share one
+// in-flight request so the single-use refresh token is never consumed twice.
+let refreshInFlight = null;
 export const refreshAccessToken = async () => {
-  const res = await axios.post('/api/auth/refresh-token', {}, {
-    withCredentials: true
-  });
-  const token = res.data.accessToken || res.data.token || res.data.jwt;
-  if (token) setAuthToken(token);
-  return token;
+  if (!refreshInFlight) {
+    refreshInFlight = (async () => {
+      const res = await axios.post('/api/auth/refresh-token', {}, {
+        withCredentials: true
+      });
+      const token = res.data.accessToken || res.data.token || res.data.jwt;
+      if (token) setAuthToken(token);
+      return token;
+    })().finally(() => {
+      refreshInFlight = null;
+    });
+  }
+  return refreshInFlight;
 };
 
 // Async thunks
@@ -38,18 +48,15 @@ export const verifyOtpLogin = createAsyncThunk(
 
       const res = await apiClient.post('/auth/verify-otp', { email, otp })
 
-      
       // Token could be in 'accessToken', 'jwt', or 'token'
       const token = res.data.accessToken || res.data.jwt || res.data.token || res.data.data?.token
-      const refreshToken = res.data.refreshToken || res.data.data?.refreshToken
-      
+
       if (!token) {
         throw new Error(`Token not found. Response: ${JSON.stringify(res.data)}`)
       }
-      
-      return { 
-        token, 
-        refreshToken,
+
+      return {
+        token,
         user: res.data.user
       }
     } catch (error) {
@@ -63,7 +70,7 @@ export const sendOtpSignup = createAsyncThunk(
   'auth/sendOtpSignup',
   async ({ email }, { rejectWithValue }) => {
     try {
-      await apiClient.post('/auth/send-otp', { email })
+      await apiClient.post('/auth/signup', { email })
 
       return { email }
     } catch (error) {
@@ -71,7 +78,7 @@ export const sendOtpSignup = createAsyncThunk(
         localStorage.setItem('otpCooldown', Date.now() + 120000);
         return rejectWithValue('Too many requests. Please wait 2 minutes before trying again.');
       }
-      return rejectWithValue(error.response?.data?.message || `Failed to send OTP: ${error.message}`)
+      return rejectWithValue(error.response?.data?.error || error.response?.data?.message || `Failed to send OTP: ${error.message}`)
     }
   }
 )
@@ -83,19 +90,16 @@ export const verifyOtpSignup = createAsyncThunk(
 
       const res = await apiClient.post('/auth/verify-otp', { email, otp })
 
-      
       // Token could be in 'accessToken', 'jwt', or 'token'
       const token = res.data.accessToken || res.data.jwt || res.data.token || res.data.data?.token
-      const refreshToken = res.data.refreshToken || res.data.data?.refreshToken
-      
+
       if (!token) {
         throw new Error(`Token not found. Response: ${JSON.stringify(res.data)}`)
       }
-      
-      return { 
-        token, 
-        refreshToken, 
-        user: res.data.user, 
+
+      return {
+        token,
+        user: res.data.user,
       }
     } catch (error) {
 
@@ -122,12 +126,40 @@ export const resendOtpLogin = createAsyncThunk(
 
 export const completeProfile = createAsyncThunk(
   'auth/completeProfile',
-  async ({ name, phone, gender, dateOfBirth }, { getState, rejectWithValue }) => {
+  async ({ name, phone, gender, dateOfBirth }, { rejectWithValue }) => {
     try {
       const res = await apiClient.post('/auth/complete-profile', { name, phone, gender, dateOfBirth })
       return { user: res.data.user }
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message || 'Failed to complete profile')
+    }
+  }
+)
+
+export const uploadAvatar = createAsyncThunk(
+  'auth/uploadAvatar',
+  async (file, { rejectWithValue }) => {
+    try {
+      const formData = new FormData()
+      formData.append('avatar', file)
+      const res = await apiClient.put('/auth/profile/avatar', formData)
+      const avatar = res.data?.data?.avatar || res.data?.avatar
+      if (!avatar) throw new Error('No avatar URL in response')
+      return { avatar }
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || error.message || 'Failed to upload avatar')
+    }
+  }
+)
+
+export const deleteAvatar = createAsyncThunk(
+  'auth/deleteAvatar',
+  async (_, { rejectWithValue }) => {
+    try {
+      await apiClient.delete('/auth/profile/avatar')
+      return { avatar: null }
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || error.message || 'Failed to remove avatar')
     }
   }
 )
@@ -158,11 +190,10 @@ export const fetchProfile = createAsyncThunk(
       }
 
       const res = await apiClient.get('/auth/profile')
-      
+
       // Extract user data from response (handle different API formats)
       const userData = res.data.user || res.data.data || res.data
 
-      
       return {
         name: userData.name,
         email: userData.email,
@@ -248,29 +279,38 @@ export const revokeAllSessions = createAsyncThunk(
   }
 )
 
-export const restoreAuthFromStorage = createAsyncThunk(
-  'auth/restoreAuthFromStorage',
+// Session bootstrap: the access token is NOT stored anywhere persistent, so on
+// app startup we exchange the httpOnly refreshToken cookie for a fresh access
+// token and load the user profile.
+export const bootstrapAuth = createAsyncThunk(
+  'auth/bootstrapAuth',
   async (_, { rejectWithValue }) => {
     try {
-      const storedToken = getStoredToken()
-      if (!storedToken) {
-        throw new Error('No token in storage')
+      const token = await refreshAccessToken()
+      if (!token) {
+        throw new Error('No active session')
       }
-      setAuthToken(storedToken)
 
-      return { token: storedToken }
+      let user = null
+      try {
+        const res = await apiClient.get('/auth/profile')
+        user = res.data.user || res.data.data || res.data
+      } catch { /* profile fetch failure is non-fatal */ }
+
+      return { token, user }
     } catch (error) {
-      return rejectWithValue(error.message)
+      return rejectWithValue(error.message || 'Session expired')
     }
   }
 )
 
-const savedToken = getStoredToken()
+const normalizeUser = (user) => (user ? { ...user, _id: user._id || user.id } : user);
 
 const initialState = {
   user: null,
-  token: savedToken,
-  isAuthenticated: !!savedToken,
+  token: null,
+  isAuthenticated: false,
+  bootstrapDone: false,
   step: 1, // 1: email, 2: otp, 3: details (name, phone, gender)
   email: '',
   name: '',
@@ -278,11 +318,11 @@ const initialState = {
   gender: '',
   dateOfBirth: '',
   otp: '',
-  password: '',
   timer: 0,
   loading: false,
   error: null,
   profileLoading: false,
+  avatarUploading: false,
   sessions: [],
   sessionsCount: 0,
   sessionsLoading: false,
@@ -325,7 +365,6 @@ const authSlice = createSlice({
     },
     resetAuth: (state) => {
       clearAuthToken()
-      clearStoredUser()
       Object.assign(state, { ...initialState, token: null, isAuthenticated: false })
     },
     setToken: (state, action) => {
@@ -360,13 +399,11 @@ const authSlice = createSlice({
       .addCase(verifyOtpLogin.fulfilled, (state, action) => {
         state.loading = false
         state.token = action.payload.token
-        state.user = action.payload.user
+        state.user = normalizeUser(action.payload.user)
         state.isAuthenticated = true
         state.step = 1
         state.error = null
         setAuthToken(action.payload.token)
-        if (action.payload.refreshToken) setStoredRefreshToken(action.payload.refreshToken)
-        if (action.payload.user) setStoredUser(action.payload.user)
       })
       .addCase(verifyOtpLogin.rejected, (state, action) => {
         state.loading = false
@@ -396,13 +433,11 @@ const authSlice = createSlice({
       .addCase(verifyOtpSignup.fulfilled, (state, action) => {
         state.loading = false
         state.token = action.payload.token
-        state.user = action.payload.user
+        state.user = normalizeUser(action.payload.user)
         state.isAuthenticated = false
         state.step = 3
         state.error = null
         setAuthToken(action.payload.token)
-        if (action.payload.refreshToken) setStoredRefreshToken(action.payload.refreshToken)
-        if (action.payload.user) setStoredUser(action.payload.user)
       })
       .addCase(verifyOtpSignup.rejected, (state, action) => {
         state.loading = false
@@ -421,7 +456,6 @@ const authSlice = createSlice({
         state.loading = false
         state.error = action.payload
       })
-      // resendOtpSignup
       // resendOtpSignup
       .addCase(resendOtpSignup.pending, (state) => {
         state.loading = true
@@ -442,16 +476,43 @@ const authSlice = createSlice({
       })
       .addCase(completeProfile.fulfilled, (state, action) => {
         state.loading = false
-        state.user = action.payload.user
+        state.user = normalizeUser(action.payload.user)
         state.name = action.payload.user?.name || ''
         state.isAuthenticated = true
         state.profileCompleted = true
         state.step = 1
         state.error = null
-        if (action.payload.user) setStoredUser(action.payload.user)
       })
       .addCase(completeProfile.rejected, (state, action) => {
         state.loading = false
+        state.error = action.payload
+      })
+      // uploadAvatar
+      .addCase(uploadAvatar.pending, (state) => {
+        state.avatarUploading = true
+        state.error = null
+      })
+      .addCase(uploadAvatar.fulfilled, (state, action) => {
+        state.avatarUploading = false
+        if (state.user) state.user.avatar = action.payload.avatar
+        state.error = null
+      })
+      .addCase(uploadAvatar.rejected, (state, action) => {
+        state.avatarUploading = false
+        state.error = action.payload
+      })
+      // deleteAvatar
+      .addCase(deleteAvatar.pending, (state) => {
+        state.avatarUploading = true
+        state.error = null
+      })
+      .addCase(deleteAvatar.fulfilled, (state) => {
+        state.avatarUploading = false
+        if (state.user) state.user.avatar = null
+        state.error = null
+      })
+      .addCase(deleteAvatar.rejected, (state, action) => {
+        state.avatarUploading = false
         state.error = action.payload
       })
       // fetchProfile
@@ -462,7 +523,6 @@ const authSlice = createSlice({
         state.profileLoading = false
         state.user = action.payload
         state.isAuthenticated = true
-        if (action.payload) setStoredUser(action.payload)
       })
       .addCase(fetchProfile.rejected, (state, action) => {
         state.profileLoading = false
@@ -475,8 +535,6 @@ const authSlice = createSlice({
         state.isAuthenticated = false
         state.error = null
         clearAuthToken()
-        clearStoredRefreshToken()
-        clearStoredUser()
       })
       // refreshAuthToken
       .addCase(refreshAuthToken.fulfilled, (state, action) => {
@@ -491,19 +549,24 @@ const authSlice = createSlice({
         state.isAuthenticated = false
         state.error = action.payload
         clearAuthToken()
-        clearStoredUser()
       })
-      // restoreAuthFromStorage
-      .addCase(restoreAuthFromStorage.fulfilled, (state, action) => {
+      // bootstrapAuth
+      .addCase(bootstrapAuth.pending, (state) => {
+        state.bootstrapDone = false
+      })
+      .addCase(bootstrapAuth.fulfilled, (state, action) => {
+        state.bootstrapDone = true
         state.token = action.payload.token
         state.isAuthenticated = true
+        state.user = normalizeUser(action.payload.user)
         state.error = null
-        const savedUser = getStoredUser()
-        if (savedUser) state.user = savedUser
+        setAuthToken(action.payload.token)
       })
-      .addCase(restoreAuthFromStorage.rejected, (state) => {
+      .addCase(bootstrapAuth.rejected, (state, action) => {
+        state.bootstrapDone = true
         state.token = null
         state.isAuthenticated = false
+        state.error = action.payload
         clearAuthToken()
       })
       // listSessions
@@ -536,6 +599,7 @@ export default authSlice.reducer
 
 // Selectors
 export const selectIsAuthenticated = (state) => state.auth.isAuthenticated
+export const selectBootstrapDone = (state) => state.auth.bootstrapDone
 export const selectUser = (state) => state.auth.user
 export const selectToken = (state) => state.auth.token
 export const selectLoading = (state) => state.auth.loading
@@ -549,8 +613,8 @@ export const selectDateOfBirth = (state) => state.auth.dateOfBirth
 export const selectOtp = (state) => state.auth.otp
 export const selectTimer = (state) => state.auth.timer
 export const selectProfileLoading = (state) => state.auth.profileLoading
+export const selectAvatarUploading = (state) => state.auth.avatarUploading
 export const selectSessions = (state) => state.auth.sessions
 export const selectSessionsCount = (state) => state.auth.sessionsCount
 export const selectSessionsLoading = (state) => state.auth.sessionsLoading
 export const selectAuthMethod = (state) => state.auth.authMethod
-

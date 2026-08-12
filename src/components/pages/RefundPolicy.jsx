@@ -2,22 +2,24 @@ import { RotateCcw } from 'lucide-react';
 
 const RefundPolicy = () => {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen page-bg">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="flex items-center gap-3 mb-8">
-          <RotateCcw className="w-8 h-8 text-indigo-600" />
-          <h1 className="text-3xl font-bold text-gray-900">Refund & Return Policy</h1>
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-rose-500 via-pink-600 to-pink-700 flex items-center justify-center text-white shadow-lg shadow-pink-500/30">
+            <RotateCcw className="w-6 h-6" />
+          </div>
+          <h1 className="text-3xl font-bold section-title gradient-text">Refund & Return Policy</h1>
         </div>
-        <p className="text-sm text-gray-500 mb-8">Last updated: May 24, 2026</p>
+        <p className="text-sm text-gray-500 mb-8 chip bg-white ring-1 ring-pink-100 !text-xs">Last updated: May 24, 2026</p>
 
-        <div className="space-y-8 text-gray-700 text-sm leading-relaxed">
-          <section className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+        <div className="space-y-6 text-gray-700 text-sm leading-relaxed">
+          <section className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-5">
             <h2 className="text-lg font-semibold text-amber-800 mb-2">2-Day Refund Policy</h2>
             <p className="text-amber-700">We offer a 2-day refund window from the date of delivery. Refunds are only applicable for damaged or defective products received. No returns or exchanges are accepted for change of mind or sizing issues.</p>
           </section>
 
-          <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-3">1. Eligibility for Refund</h2>
+          <section className="card rounded-2xl p-5 sm:p-6 shadow-2xl shadow-pink-200/40 ring-1 ring-pink-100">
+            <h2 className="text-xl font-semibold section-title gradient-text mb-3">1. Eligibility for Refund</h2>
             <p>Refunds are only accepted under the following conditions:</p>
             <ul className="list-disc pl-5 mt-2 space-y-1">
               <li>The product received is damaged, defective, or significantly different from the description.</li>
@@ -27,8 +29,8 @@ const RefundPolicy = () => {
             </ul>
           </section>
 
-          <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-3">2. Non-Returnable Items</h2>
+          <section className="card rounded-2xl p-5 sm:p-6 shadow-2xl shadow-pink-200/40 ring-1 ring-pink-100">
+            <h2 className="text-xl font-semibold section-title gradient-text mb-3">2. Non-Returnable Items</h2>
             <p>Due to hygiene and safety reasons, the following items <strong>cannot be returned or exchanged</strong>:</p>
             <ul className="list-disc pl-5 mt-2 space-y-1">
               <li>Innerwear, lingerie, and swimwear.</li>
@@ -39,8 +41,8 @@ const RefundPolicy = () => {
             </ul>
           </section>
 
-          <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-3">3. How to Request a Refund</h2>
+          <section className="card rounded-2xl p-5 sm:p-6 shadow-2xl shadow-pink-200/40 ring-1 ring-pink-100">
+            <h2 className="text-xl font-semibold section-title gradient-text mb-3">3. How to Request a Refund</h2>
             <ol className="list-decimal pl-5 mt-2 space-y-2">
               <li>Contact our support team at <strong>support@choosemood.in</strong> within 2 days of delivery.</li>
               <li>Provide your order number, product details, and clear photos showing the damage or defect.</li>
@@ -49,8 +51,8 @@ const RefundPolicy = () => {
             </ol>
           </section>
 
-          <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-3">4. Refund Processing Time</h2>
+          <section className="card rounded-2xl p-5 sm:p-6 shadow-2xl shadow-pink-200/40 ring-1 ring-pink-100">
+            <h2 className="text-xl font-semibold section-title gradient-text mb-3">4. Refund Processing Time</h2>
             <p className="mb-2">All refunds require admin approval and are processed within <strong>2 business days</strong> after approval.</p>
             <ul className="list-disc pl-5 space-y-1">
               <li><strong>Review & Approval:</strong> Within 24-48 hours of submitting your request by our admin team.</li>
@@ -61,8 +63,8 @@ const RefundPolicy = () => {
             </ul>
           </section>
 
-          <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-3">5. Shipping Policy</h2>
+          <section className="card rounded-2xl p-5 sm:p-6 shadow-2xl shadow-pink-200/40 ring-1 ring-pink-100">
+            <h2 className="text-xl font-semibold section-title gradient-text mb-3">5. Shipping Policy</h2>
             <ul className="list-disc pl-5 space-y-1">
               <li>Free shipping on orders above ₹499.</li>
               <li>Standard delivery: 4-7 business days.</li>
@@ -72,13 +74,13 @@ const RefundPolicy = () => {
             </ul>
           </section>
 
-          <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-3">6. Cancellation Policy</h2>
+          <section className="card rounded-2xl p-5 sm:p-6 shadow-2xl shadow-pink-200/40 ring-1 ring-pink-100">
+            <h2 className="text-xl font-semibold section-title gradient-text mb-3">6. Cancellation Policy</h2>
             <p>Orders can be cancelled within 24 hours of placement. After 24 hours, if the order has been shipped, cancellation will not be possible. To cancel, please contact our support team immediately.</p>
           </section>
 
-          <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-3">7. Contact Support</h2>
+          <section className="card rounded-2xl p-5 sm:p-6 shadow-2xl shadow-pink-200/40 ring-1 ring-pink-100">
+            <h2 className="text-xl font-semibold section-title gradient-text mb-3">7. Contact Support</h2>
             <p>
               Email: support@choosemood.in<br />
               Response Time: Within 24 hours

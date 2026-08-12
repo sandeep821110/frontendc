@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback} from 'react';
+import { useState, useEffect, useCallback} from 'react';
 import { useSearchParams } from 'react-router-dom';
 import BrandLoader from '../BrandLoader';
 import { Search, X, TrendingUp, Filter } from 'lucide-react';
@@ -14,12 +14,12 @@ const SORT_OPTIONS = [
 ];
 
 const FilterSidebar = ({ filters, category, minPrice, maxPrice, hasActiveFilters, clearFilters, handleCategoryFilter, handlePriceChange }) => (
-  <div className="bg-white rounded-xl border p-4 space-y-6">
+  <div className="card p-4 space-y-6">
     <div>
       <div className="flex items-center justify-between mb-3">
-        <h3 className="font-semibold text-gray-900">Categories</h3>
+        <h3 className="font-bold text-slate-900">Categories</h3>
         {hasActiveFilters && (
-          <button onClick={clearFilters} className="text-xs text-indigo-600 hover:underline">Clear all</button>
+          <button onClick={clearFilters} className="text-xs text-pink-600 hover:underline">Clear all</button>
         )}
       </div>
       <div className="space-y-1">
@@ -29,20 +29,20 @@ const FilterSidebar = ({ filters, category, minPrice, maxPrice, hasActiveFilters
             onClick={() => handleCategoryFilter(cat)}
             className={`block w-full text-left px-3 py-1.5 rounded-lg text-sm transition ${
               category === cat
-                ? 'bg-indigo-100 text-indigo-700 font-medium'
-                : 'text-gray-600 hover:bg-gray-100'
+                ? 'bg-gradient-to-r from-rose-100 to-pink-100 text-pink-700 font-medium'
+                : 'text-slate-600 hover:bg-slate-100'
             }`}
           >
             {cat}
           </button>
         ))}
         {filters.categories.length === 0 && (
-          <p className="text-sm text-gray-400">No categories available</p>
+          <p className="text-sm text-slate-400">No categories available</p>
         )}
       </div>
     </div>
     <div>
-      <h3 className="font-semibold text-gray-900 mb-3">Price Range</h3>
+      <h3 className="font-bold text-slate-900 mb-3">Price Range</h3>
       <div className="flex items-center gap-2">
         <input
           type="text"
@@ -50,16 +50,16 @@ const FilterSidebar = ({ filters, category, minPrice, maxPrice, hasActiveFilters
           placeholder="Min"
           value={minPrice}
           onChange={(e) => handlePriceChange('minPrice', e.target.value.replace(/\D/g, ''))}
-          className="w-full px-2 py-1.5 border rounded text-sm"
+          className="input !py-1.5 !px-2 !text-sm"
         />
-        <span className="text-gray-400">-</span>
+        <span className="text-slate-400">-</span>
         <input
           type="text"
           inputMode="numeric"
           placeholder="Max"
           value={maxPrice}
           onChange={(e) => handlePriceChange('maxPrice', e.target.value.replace(/\D/g, ''))}
-          className="w-full px-2 py-1.5 border rounded text-sm"
+          className="input !py-1.5 !px-2 !text-sm"
         />
       </div>
     </div>
@@ -171,17 +171,21 @@ const SearchResults = () => {
 
   if (!query) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen page-bg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center mb-10">
-            <Search className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Discover Products</h2>
+            <div className="w-16 h-16 mx-auto rounded-3xl bg-gradient-to-br from-rose-100 via-pink-100 to-pink-100 flex items-center justify-center mb-4">
+              <Search className="w-8 h-8 text-pink-600" />
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-2">
+              Discover <span className="gradient-text-animated">Products</span>
+            </h2>
             <p className="text-gray-500">Search for what you love or browse our trending products</p>
           </div>
           <section>
             <div className="flex items-center gap-2 mb-6">
-              <TrendingUp className="w-5 h-5 text-indigo-600" />
-              <h3 className="text-lg font-semibold text-gray-900">Trending Products</h3>
+              <TrendingUp className="w-5 h-5 text-pink-600" />
+              <h3 className="text-lg font-bold text-gray-900">Trending Products</h3>
             </div>
             {recommendations.length > 0 ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -199,32 +203,33 @@ const SearchResults = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen page-bg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 break-all">
-              Results for &quot;{query}&quot;
+            <span className="section-badge mb-2">Search results</span>
+            <h1 className="section-title !text-2xl sm:!text-3xl break-all mt-1">
+              Results for &quot;<span className="gradient-text-animated">{query}</span>&quot;
             </h1>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-slate-500 mt-1">
               {pagination.total} product{pagination.total !== 1 ? 's' : ''} found
             </p>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowMobileFilters(true)}
-              className="lg:hidden flex items-center gap-2 px-3 py-2 bg-white border rounded-lg text-sm hover:bg-gray-50"
+              className="lg:hidden flex items-center gap-2 px-3 py-2 btn-outline !text-sm"
             >
               <Filter className="w-4 h-4" />
               Filters
               {hasActiveFilters && (
-                <span className="w-2 h-2 rounded-full bg-indigo-600" />
+                <span className="w-2 h-2 rounded-full bg-pink-600" />
               )}
             </button>
             <select
               value={sortBy}
               onChange={(e) => handleSort(e.target.value)}
-              className="px-3 py-2 bg-white border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
+              className="input !py-2 !text-sm w-auto"
             >
               {SORT_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -253,11 +258,11 @@ const SearchResults = () => {
           {/* Mobile filter drawer */}
           {showMobileFilters && (
             <div className="fixed inset-0 z-50 lg:hidden">
-              <div className="absolute inset-0 bg-black/50" onClick={() => setShowMobileFilters(false)} />
-              <div className="absolute right-0 top-0 bottom-0 w-80 max-w-[85vw] bg-white shadow-xl overflow-y-auto">
-                <div className="flex items-center justify-between p-4 border-b">
-                  <h2 className="font-semibold text-gray-900">Filters</h2>
-                  <button onClick={() => setShowMobileFilters(false)} className="p-1 hover:bg-gray-100 rounded">
+              <div className="absolute inset-0 bg-slate-950/50 backdrop-blur-sm" onClick={() => setShowMobileFilters(false)} />
+              <div className="absolute right-0 top-0 bottom-0 w-80 max-w-[85vw] bg-white shadow-2xl overflow-y-auto">
+                <div className="flex items-center justify-between p-4 border-b border-slate-100">
+                  <h2 className="font-bold text-slate-900">Filters</h2>
+                  <button onClick={() => setShowMobileFilters(false)} className="p-1.5 hover:bg-slate-100 rounded-lg">
                     <X className="w-5 h-5" />
                   </button>
                 </div>
@@ -281,13 +286,13 @@ const SearchResults = () => {
             {loading ? (
               <BrandLoader text="Searching..." />
             ) : results.length === 0 ? (
-              <div className="text-center py-20">
-                <Search className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-                <h2 className="text-xl font-semibold text-gray-600 mb-2">No products found</h2>
-                <p className="text-gray-400 mb-4">Try adjusting your search or filter criteria</p>
+              <div className="card p-10 text-center">
+                <Search className="w-16 h-16 mx-auto text-slate-200 mb-4" />
+                <h2 className="text-xl font-bold text-slate-700 mb-2">No products found</h2>
+                <p className="text-slate-400 mb-4">Try adjusting your search or filter criteria</p>
                 <button
                   onClick={clearFilters}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700"
+                  className="btn-gradient !px-6 !py-2.5"
                 >
                   Clear all filters
                 </button>
@@ -297,7 +302,7 @@ const SearchResults = () => {
                 {hasActiveFilters && (
                   <div className="flex flex-wrap items-center gap-2 mb-4">
                     {category && (
-                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm">
+                      <span className="chip bg-rose-100 text-pink-700 font-medium text-sm">
                         {category}
                         <button onClick={() => handleCategoryFilter(category)}>
                           <X className="w-3 h-3" />
@@ -305,7 +310,7 @@ const SearchResults = () => {
                       </span>
                     )}
                     {(minPrice || maxPrice) && (
-                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm">
+                      <span className="chip bg-rose-100 text-pink-700 font-medium text-sm">
                         ₹{minPrice || 0} - ₹{maxPrice || '∞'}
                         <button onClick={() => handlePriceChange('minPrice', '')}>
                           <X className="w-3 h-3" />
@@ -329,7 +334,7 @@ const SearchResults = () => {
                         setSearchParams(params);
                       }}
                       disabled={page <= 1}
-                      className="px-3 py-2 bg-white border rounded-lg text-sm disabled:opacity-40 hover:bg-gray-50"
+                      className="btn-outline !py-2 !px-3 !text-sm disabled:opacity-40"
                     >
                       Previous
                     </button>
@@ -347,8 +352,8 @@ const SearchResults = () => {
                           }}
                           className={`w-9 h-9 rounded-lg text-sm font-medium ${
                             p === page
-                              ? 'bg-indigo-600 text-white'
-                              : 'bg-white border hover:bg-gray-50'
+                              ? 'btn-gradient !w-9 !h-9 !p-0 !text-sm'
+                              : 'btn-outline !w-9 !h-9 !p-0 !text-sm'
                           }`}
                         >
                           {p}
@@ -362,7 +367,7 @@ const SearchResults = () => {
                         setSearchParams(params);
                       }}
                       disabled={page >= pagination.totalPages}
-                      className="px-3 py-2 bg-white border rounded-lg text-sm disabled:opacity-40 hover:bg-gray-50"
+                      className="btn-outline !py-2 !px-3 !text-sm disabled:opacity-40"
                     >
                       Next
                     </button>

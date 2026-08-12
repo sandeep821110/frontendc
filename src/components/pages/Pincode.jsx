@@ -1,4 +1,4 @@
-﻿import axios from 'axios';
+import axios from 'axios';
 import React, { useState, useEffect, useCallback } from 'react';
 import { MapPin, Truck, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 
@@ -37,9 +37,11 @@ const Pincode = () => {
   }, [pincode, handlePincodeCheck]);
 
   return (
-    <div className="max-w-md mx-auto p-4 sm:p-6 bg-white rounded-2xl shadow-sm border border-gray-100 my-4 sm:my-8 mx-3 sm:mx-auto">
-      <div className="flex items-center gap-2 mb-3 sm:mb-4 text-indigo-600">
-        <MapPin size={18} />
+    <div className="card rounded-3xl p-5 sm:p-6 shadow-2xl shadow-pink-200/50 ring-1 ring-pink-100 my-4 sm:my-8 mx-3 sm:mx-auto max-w-md">
+      <div className="flex items-center gap-2 mb-3 sm:mb-4">
+        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-rose-500 via-pink-600 to-pink-700 flex items-center justify-center text-white shadow-md shadow-pink-500/30">
+          <MapPin size={18} />
+        </div>
         <h3 className="font-bold text-sm sm:text-base text-gray-800">Check Delivery</h3>
       </div>
 
@@ -47,7 +49,7 @@ const Pincode = () => {
         <input
           type="text"
           placeholder="Enter Pincode"
-          className="flex-1 px-3 sm:px-4 py-1.5 sm:py-2 text-sm border border-gray-200 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition"
+          className="input !py-1.5 sm:!py-2 !text-sm"
           value={pincode}
           onChange={(e) => setPincode(e.target.value.replace(/\D/g, '').slice(0, 6))}
           maxLength={6}
@@ -55,27 +57,27 @@ const Pincode = () => {
         <button
           type="submit"
           disabled={status === 'loading'}
-          className="bg-indigo-600 text-white px-4 sm:px-6 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-sm font-bold hover:bg-indigo-700 transition disabled:opacity-70"
+          className="btn-gradient !px-4 sm:!px-6 !py-1.5 sm:!py-2 !text-sm"
         >
           {status === 'loading' ? <Loader2 className="animate-spin" size={18} /> : 'Check'}
         </button>
       </form>
 
       {error && (
-        <div className="mt-4 flex items-center gap-2 text-red-500 text-sm bg-red-50 p-3 rounded-lg">
+        <div className="mt-4 flex items-center gap-2 text-rose-500 text-sm bg-rose-50 border border-rose-100 p-3 rounded-xl">
           <XCircle size={16} />
           <p>{error}</p>
         </div>
       )}
 
       {status === 'success' && deliveryData && (
-        <div className="mt-4 space-y-3 bg-green-50 p-4 rounded-xl border border-green-100">
+        <div className="mt-4 space-y-3 bg-gradient-to-br from-emerald-50 to-green-50 p-4 rounded-2xl border border-emerald-200">
           <div className="flex items-center gap-2 text-green-700 font-semibold">
             <CheckCircle2 size={18} />
             <span>Delivery Available!</span>
           </div>
           <div className="flex items-center gap-3 text-gray-600 text-sm">
-            <Truck size={16} className="text-indigo-600" />
+            <Truck size={16} className="text-pink-600" />
             <p>Estimated Delivery: <span className="font-bold text-gray-800">{deliveryData.estimatedDays || '3-5'} Days</span></p>
           </div>
         </div>

@@ -1,13 +1,16 @@
-﻿import axios from 'axios';
+import axios from 'axios';
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import SimilarProduct from './SimilarProduct';
+import ReviewsSection from '../reviews/ReviewsSection';
 import BrandLoader from '../BrandLoader';
 import { MapPin, CheckCircle2, XCircle, Loader2, Heart, Share2, ChevronLeft, ChevronRight, Languages, Crosshair } from 'lucide-react';
 import { addToWishlist, removeFromWishlist } from '../../features/wishlist/wishlistSlice';
 import { addToCart } from '../../features/cart/cartSlice';
 import { useToast } from '../ui/Toast';
+import { optimizeImage } from '../../utils/cloudinary';
+import { getProductReviewsAPI } from '../../services/reviewAPI';
 
 const ProductDetails = () => {
   const { id } = useParams(); 
@@ -27,17 +30,20 @@ const ProductDetails = () => {
   const [hindiDescription, setHindiDescription] = useState('');
   const [translating, setTranslating] = useState(false);
   const [showHindi, setShowHindi] = useState(false);
+  const [reviewCount, setReviewCount] = useState(0);
+  const [colorVariants, setColorVariants] = useState([]);
 
   const translateToHindi = useCallback(async (text) => {
     if (hindiDescription) { setShowHindi(p => !p); return; }
     setTranslating(true);
     try {
-      const res = await axios.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=hi&dt=t&q=${encodeURIComponent(text)}`);
-      const translated = res.data[0].map(t => t[0]).join('');
+      const res = await axios.post('/api/products/translate', { text });
+      const translated = res.data?.data?.text || '';
+      if (!translated) throw new Error('Empty translation');
       setHindiDescription(translated);
       setShowHindi(true);
     } catch {
-      setHindiDescription('à¤…à¤¨à¥à¤µà¤¾à¤¦ à¤¸à¥‡à¤µà¤¾ à¤‰à¤ªà¤²à¤¬à¥à¤§ à¤¨à¤¹à¥€à¤‚ à¤¹à¥ˆ'); // Translation service unavailable
+      setHindiDescription('अनुवाद सेवा उपलब्ध नहीं है'); // Translation service unavailable
       setShowHindi(true);
     } finally {
       setTranslating(false);
@@ -148,7 +154,8 @@ const ProductDetails = () => {
         id: productData._id || productData.id,
         displayImages: [].concat(productData.images || productData.image || [])
           .map(img => (img && typeof img === 'object' ? img.url : img))
-          .filter(Boolean),
+          .filter(Boolean)
+          .map(img => optimizeImage(img, { width: 1200 })),
         displaySizes: Array.isArray(productData.size) ? productData.size : (Array.isArray(productData.sizes) ? productData.sizes.map(s => ({size: s, quantity: undefined})) : [])
       };
 
@@ -166,6 +173,31 @@ const ProductDetails = () => {
   useEffect(() => {
     fetchProduct();
   }, [id, fetchProduct]);
+
+  useEffect(() => {
+    if (!productId) return;
+    let active = true;
+    getProductReviewsAPI(productId, { limit: 1 })
+      .then((res) => { if (active) setReviewCount(res.summary?.total || 0); })
+      .catch(() => { if (active) setReviewCount(0); });
+    return () => { active = false; };
+  }, [productId]);
+
+  useEffect(() => {
+    if (!product?.productCode) {
+      setColorVariants([]);
+      return;
+    }
+    let active = true;
+    axios.get('/api/products', { params: { productCode: product.productCode, limit: 20 } })
+      .then((res) => {
+        if (!active) return;
+        const list = res.data.success && Array.isArray(res.data.data) ? res.data.data : (Array.isArray(res.data) ? res.data : []);
+        setColorVariants(list.filter((p) => String(p._id || p.id) !== String(productId)));
+      })
+      .catch(() => { if (active) setColorVariants([]); });
+    return () => { active = false; };
+  }, [product?.productCode, productId]);
 
   useEffect(() => {
     const handleVisibility = () => {
@@ -271,17 +303,17 @@ const ProductDetails = () => {
     }
   };
 
-  if (!product) return <div className="h-screen flex items-center justify-center"><BrandLoader text="Loading product details..." /></div>;
+  if (!product) return <div className="h-screen page-bg flex items-center justify-center"><BrandLoader text="Loading product details..." /></div>;
 
   return (
-    <div>
+    <div className="min-h-screen page-bg">
       <div className="max-w-7xl mx-auto px-4 py-6 sm:py-8 md:py-16 grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12">
         {/* Product Image */}
-        <div className="relative group aspect-square rounded-xl sm:rounded-2xl md:rounded-3xl overflow-hidden bg-gray-50 border border-gray-100">
+        <div className="relative group aspect-square rounded-xl sm:rounded-2xl md:rounded-3xl overflow-hidden bg-slate-100 card shadow-2xl shadow-pink-200/50 ring-1 ring-pink-100">
           <div className="absolute top-4 right-4 z-10 flex flex-col gap-3">
             <button 
               onClick={handleWishlist}
-              className={`p-3 rounded-full shadow-lg hover:scale-110 transition-all transform ${isWishlisted ? 'bg-red-500' : 'bg-white/80 backdrop-blur-md hover:bg-white'}`}
+              className={`p-3 rounded-full shadow-lg hover:scale-110 transition-all transform ${isWishlisted ? 'bg-gradient-to-br from-rose-500 via-pink-600 to-pink-700' : 'bg-white/80 backdrop-blur-md hover:bg-white'}`}
             >
               <Heart size={22} className={isWishlisted ? "fill-white text-white" : "text-gray-600"} />
             </button>
@@ -316,7 +348,7 @@ const ProductDetails = () => {
               </button>
               <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
                 {product.displayImages.map((_, i) => (
-                  <div key={i} className={`h-1.5 rounded-full transition-all ${i === currentImageIndex ? 'w-6 bg-indigo-600' : 'w-2 bg-gray-300'}`} />
+                  <div key={i} className={`h-1.5 rounded-full transition-all ${i === currentImageIndex ? 'w-6 bg-pink-600' : 'w-2 bg-gray-300'}`} />
                 ))}
               </div>
             </>
@@ -326,18 +358,19 @@ const ProductDetails = () => {
         {/* Product Info */}
         <div className="flex flex-col justify-center">
           <div className="flex justify-between items-start mb-4">
-            <h1 className="text-2xl md:text-4xl font-bold text-gray-900">{product.name}</h1>
+            <h1 className="text-2xl md:text-4xl font-bold section-title">{product.name}</h1>
           </div>
           
           {product.rating && (
             <div className="flex items-center mb-4">
               <span className="text-yellow-400 text-xl">★</span>
               <span className="ml-1 font-semibold">{product.rating}</span>
+              <span className="ml-2 text-sm text-gray-500">({reviewCount || 0} reviews)</span>
             </div>
           )}
 
           <div className="flex items-center gap-3 mb-6">
-            <span className="text-2xl md:text-3xl font-bold text-indigo-600">
+            <span className="text-2xl md:text-3xl font-bold gradient-text">
               ₹{product.discountPrice ?? (product.discount
                 ? Math.round(product.price * (1 - product.discount / 100))
                 : Math.round(Number(product.price) || 0))}
@@ -345,7 +378,7 @@ const ProductDetails = () => {
             {product.discount > 0 && (
               <>
                 <span className="text-lg md:text-xl text-gray-400 line-through">₹{Math.round(Number(product.price) || 0)}</span>
-                <span className="bg-red-100 text-red-600 px-2 py-1 rounded-lg text-sm font-bold">
+                <span className="bg-rose-100 text-rose-600 px-2 py-1 rounded-lg text-sm font-bold">
                   {product.discount}% OFF
                 </span>
               </>
@@ -358,7 +391,7 @@ const ProductDetails = () => {
               <button
                 onClick={() => translateToHindi(product.description)}
                 disabled={translating}
-                className="flex items-center gap-1.5 text-xs sm:text-sm text-indigo-600 hover:text-indigo-800 font-medium transition disabled:opacity-50"
+                className="flex items-center gap-1.5 text-xs sm:text-sm text-pink-600 hover:text-pink-800 font-medium transition disabled:opacity-50"
               >
                 <Languages size={16} />
                 {translating ? 'Translating...' : showHindi ? 'English' : 'Hindi'}
@@ -369,6 +402,36 @@ const ProductDetails = () => {
             </p>
           </div>
 
+          {colorVariants.length > 0 && (
+            <div className="mb-6">
+              <h3 className="font-semibold mb-2 text-sm sm:text-base">Color</h3>
+              <div className="flex flex-wrap items-center gap-3">
+                {[product, ...colorVariants].map((v) => {
+                  const vId = String(v._id || v.id);
+                  const rawImg = v.displayImages?.[0] || (Array.isArray(v.images) && v.images.length > 0
+                    ? (typeof v.images[0] === 'object' ? v.images[0].url : v.images[0])
+                    : null) || v.image || null;
+                  const isActive = vId === String(productId);
+                  return (
+                    <button
+                      key={vId}
+                      onClick={() => { if (!isActive) navigate(`/product/${vId}`); }}
+                      title={v.name}
+                      aria-label={`Color variant ${v.name}`}
+                      className={`w-10 h-10 sm:w-11 sm:h-11 rounded-full overflow-hidden ring-2 ring-offset-2 transition-all transform ${isActive ? 'ring-pink-600 scale-110' : 'ring-slate-200 hover:ring-pink-400 hover:scale-105'}`}
+                    >
+                      {rawImg ? (
+                        <img src={optimizeImage(rawImg, { width: 200 })} alt={v.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="w-full h-full block bg-gradient-to-br from-rose-100 to-pink-200" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {product.displaySizes && product.displaySizes.length > 0 && product.displaySizes[0]?.size !== undefined && (
             <div className="mb-6">
               <h3 className="font-semibold mb-2">Available Sizes</h3>
@@ -378,10 +441,10 @@ const ProductDetails = () => {
                     key={sizeInfo.size} 
                     onClick={() => handleSelectSize(sizeInfo.size)}
                     disabled={!sizeInfo.quantity || sizeInfo.quantity === 0}
-                    className={`min-w-[80px] px-3 py-2 border-2 rounded-xl font-bold text-sm md:text-base flex flex-col items-center justify-center leading-tight transition-all duration-200 ${selectedSize === sizeInfo.size ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-200 scale-105' : 'bg-white text-gray-600 border-gray-100 hover:border-indigo-400 hover:shadow-md'} disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-gray-100 disabled:hover:shadow-none`}
+                    className={`min-w-[80px] px-3 py-2 border-2 rounded-xl font-bold text-sm md:text-base flex flex-col items-center justify-center leading-tight transition-all duration-200 ${selectedSize === sizeInfo.size ? 'bg-gradient-to-r from-rose-500 via-pink-600 to-pink-700 text-white border-transparent shadow-lg shadow-pink-500/30 scale-105' : 'bg-white text-gray-600 border-slate-200 hover:border-pink-500 hover:shadow-md'} disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-slate-200 disabled:hover:shadow-none`}
                   >
                     <span>{sizeInfo.size}</span>
-                    <span className={`text-xs font-normal mt-1 ${selectedSize === sizeInfo.size ? 'text-indigo-200' : 'text-gray-400'}`}>
+                    <span className={`text-xs font-normal mt-1 ${selectedSize === sizeInfo.size ? 'text-pink-200' : 'text-gray-400'}`}>
                       {sizeInfo.quantity ? `${sizeInfo.quantity} left` : 'Out'}
                     </span>
                   </button>
@@ -391,16 +454,18 @@ const ProductDetails = () => {
             </div>
           )}
 
-          <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-gray-50 rounded-xl sm:rounded-2xl border border-gray-100">
-            <div className="flex items-center gap-2 mb-2 sm:mb-3 text-indigo-600">
-              <MapPin size={16} />
+          <div className="mb-4 sm:mb-6 p-3 sm:p-4 card rounded-2xl ring-1 ring-pink-100">
+            <div className="flex items-center gap-2 mb-2 sm:mb-3">
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-rose-500 via-pink-600 to-pink-700 flex items-center justify-center text-white">
+                <MapPin size={14} />
+              </div>
               <h3 className="font-bold text-xs sm:text-sm text-gray-800">Check Delivery</h3>
             </div>
             <div className="flex gap-2">
               <input
                 type="text"
                 placeholder="Enter Pincode"
-                className="flex-1 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-gray-200 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                className="input !py-1.5 sm:!py-2 !text-xs sm:!text-sm"
                 value={pincode}
                 onChange={(e) => setPincode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                 maxLength={6}
@@ -408,7 +473,7 @@ const ProductDetails = () => {
               <button
                 onClick={handleDetectLocation}
                 disabled={detectingLocation}
-                className="bg-white text-indigo-600 border border-indigo-300 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold hover:bg-indigo-50 transition flex items-center gap-1"
+                className="btn-outline !px-2 sm:!px-3 !py-1.5 sm:!py-2 !text-xs sm:!text-sm flex items-center gap-1"
                 title="Detect my location"
               >
                 {detectingLocation ? <Loader2 className="animate-spin" size={14} /> : <Crosshair size={14} />}
@@ -416,7 +481,7 @@ const ProductDetails = () => {
               <button
                 onClick={handlePincodeCheck}
                 disabled={pincodeStatus === 'loading' || pincode.length !== 6}
-                className="bg-indigo-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold hover:bg-indigo-700 transition disabled:opacity-50"
+                className="btn-gradient !px-3 sm:!px-4 !py-1.5 sm:!py-2 !text-xs sm:!text-sm"
               >
                 {pincodeStatus === 'loading' ? <Loader2 className="animate-spin" size={14} /> : 'Check'}
               </button>
@@ -473,7 +538,7 @@ const ProductDetails = () => {
             <button 
               onClick={handleAddToCart}
               disabled={isAddingCart || !selectedSize || maxQuantity === 0 || pincodeStatus !== 'success'}
-              className="bg-indigo-600 text-white w-full py-3 sm:py-3.5 md:py-4 rounded-xl font-bold text-sm sm:text-base md:text-lg hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="btn-gradient w-full !py-3 sm:!py-3.5 md:!py-4 !text-sm sm:!text-base md:!text-lg"
             >
               {isAddingCart && <Loader2 className="animate-spin" size={18} />}
               {isAddingCart ? 'Adding...' : 'Add to Cart'}
@@ -481,17 +546,17 @@ const ProductDetails = () => {
             <button 
               onClick={handleBuyNow}
               disabled={isAddingCart || !selectedSize || maxQuantity === 0 || pincodeStatus !== 'success'}
-              className="bg-gray-900 text-white w-full py-3 sm:py-3.5 md:py-4 rounded-xl font-bold text-sm sm:text-base md:text-lg hover:bg-black transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="btn-dark w-full !py-3 sm:!py-3.5 md:!py-4 !text-sm sm:!text-base md:!text-lg"
             >
               {isAddingCart && <Loader2 className="animate-spin" size={18} />}
               {isAddingCart ? 'Processing...' : 'Buy Now'}
             </button>
             <div className="min-h-[16px]">
               {pincodeStatus === null && (
-                <p className="text-red-500 text-xs text-center">Check delivery pincode above to continue</p>
+                <p className="text-rose-500 text-xs text-center">Check delivery pincode above to continue</p>
               )}
               {pincodeStatus === 'error' && (
-                <p className="text-red-500 text-xs text-center">Delivery not available at this pincode</p>
+                <p className="text-rose-500 text-xs text-center">Delivery not available at this pincode</p>
               )}
               {pincodeStatus === 'unavailable' && (
                 <p className="text-amber-500 text-xs text-center">Coming soon to this location</p>
@@ -501,6 +566,13 @@ const ProductDetails = () => {
         </div>
       </div>
       <SimilarProduct category={product?.category} subCategory={product?.subCategory} currentProductId={product?._id || product?.id} />
+      <div className="max-w-7xl mx-auto px-4">
+        <ReviewsSection
+          productId={product?._id || product?.id}
+          productName={product?.name}
+          productImage={product?.displayImages?.[0] ? [product.displayImages[0]] : null}
+        />
+      </div>
     </div>
   );
 };

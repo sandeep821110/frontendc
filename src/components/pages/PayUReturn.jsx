@@ -91,10 +91,13 @@ const PayUReturn = () => {
   }, [navigate, searchParams]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="text-center">
-        <Loader2 className="animate-spin mx-auto mb-4 text-indigo-600" size={40} />
-        <p className="text-gray-600 font-semibold">Processing payment response...</p>
+    <div className="min-h-screen page-bg flex items-center justify-center px-4">
+      <div className="card rounded-3xl px-8 sm:px-12 py-10 text-center shadow-2xl shadow-pink-200/50 ring-1 ring-pink-100">
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-rose-500 via-pink-600 to-pink-700 flex items-center justify-center mx-auto mb-5 shadow-lg shadow-pink-500/30">
+          <Loader2 className="animate-spin text-white" size={30} />
+        </div>
+        <p className="text-slate-700 font-bold text-lg">Processing payment response...</p>
+        <p className="text-slate-400 text-sm mt-1">Please wait, do not refresh the page</p>
       </div>
     </div>
   );

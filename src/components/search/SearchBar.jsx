@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, X, Loader2, TrendingUp, Camera } from 'lucide-react';
 import { apiClient } from '../../services/apiClient';
@@ -158,7 +158,7 @@ const SearchBar = () => {
 
   const searchInput = (extraClasses = '') => (
     <form onSubmit={handleSubmit} className="relative">
-      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
       <input
         ref={inputRef}
         type="text"
@@ -167,26 +167,26 @@ const SearchBar = () => {
         onKeyDown={handleKeyDown}
         onFocus={handleFocus}
         placeholder="Search products..."
-        className={`w-full pl-9 pr-16 py-2 bg-gray-800 border border-gray-700 rounded-full text-white text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${extraClasses}`}
+        className={`w-full pl-10 pr-16 py-2.5 bg-white/5 border border-white/10 rounded-full text-white text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-pink-500/60 focus:border-transparent transition ${extraClasses}`}
         aria-label="Search"
         autoComplete="off"
       />
       <button
         type="button"
         onClick={() => setVisualSearchOpen(true)}
-        className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-gray-400 hover:text-indigo-400 transition rounded-full hover:bg-gray-700"
+        className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-pink-400 transition rounded-full hover:bg-white/10"
         title="Search by image"
       >
         <Camera className="w-4 h-4" />
       </button>
       {loading && (
-        <Loader2 className="absolute right-8 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 animate-spin" />
+        <Loader2 className="absolute right-9 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 animate-spin" />
       )}
       {!loading && query && (
         <button
           type="button"
           onClick={handleClear}
-          className="absolute right-8 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+          className="absolute right-9 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
         >
           <X className="w-4 h-4" />
         </button>
@@ -200,7 +200,7 @@ const SearchBar = () => {
       <button
         type="button"
         onClick={() => { setMobileOpen(true); setTimeout(() => inputRef.current?.focus(), 100); }}
-        className="md:hidden flex items-center justify-center text-white hover:text-indigo-200 p-1.5"
+        className="md:hidden flex items-center justify-center text-white hover:text-pink-200 p-1.5"
         aria-label="Open search"
       >
         <Search className="w-5 h-5" />
@@ -214,8 +214,8 @@ const SearchBar = () => {
       {/* Mobile: overlay search */}
       {mobileOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
-          <div className="absolute inset-0 bg-black/80" onClick={() => { setMobileOpen(false); closeDropdown(); }} />
-          <div className="relative bg-gray-900 px-4 py-3 shadow-lg">
+          <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onClick={() => { setMobileOpen(false); closeDropdown(); }} />
+          <div className="relative bg-slate-950/95 backdrop-blur-xl border-b border-white/10 px-4 py-3 shadow-2xl">
             <div className="flex items-center gap-2">
               <div className="flex-1">
                 {searchInput('text-base')}
@@ -223,7 +223,7 @@ const SearchBar = () => {
               <button
                 type="button"
                 onClick={() => { setMobileOpen(false); closeDropdown(); }}
-                className="text-white text-sm font-medium hover:text-indigo-200 flex-shrink-0"
+                className="text-white text-sm font-medium hover:text-pink-400 flex-shrink-0"
               >
                 Cancel
               </button>
@@ -236,11 +236,11 @@ const SearchBar = () => {
       {shouldShowDropdown && (
         <div
           ref={dropdownRef}
-          className={`${mobileOpen ? 'fixed left-4 right-4 top-16' : 'absolute top-full left-0 right-0 mt-1'} bg-gray-900 border border-gray-700 rounded-xl shadow-2xl overflow-hidden z-50 max-h-96 overflow-y-auto`}
+          className={`${mobileOpen ? 'fixed left-4 right-4 top-20' : 'absolute top-full left-0 right-0 mt-2'} bg-slate-950/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl shadow-pink-950/40 overflow-hidden z-50 max-h-96 overflow-y-auto animate-pop`}
         >
           {suggestions.length > 0 ? (
             <>
-              <div className="px-4 py-2 text-xs text-gray-500 font-medium border-b border-gray-700">
+              <div className="px-4 py-2 text-xs text-slate-500 font-medium border-b border-white/10">
                 Product Suggestions
               </div>
               {suggestions.map((suggestion, index) => {
@@ -257,34 +257,34 @@ const SearchBar = () => {
                     key={suggestion._id || suggestion.productId}
                     onMouseDown={() => handleSuggestionClick(suggestion)}
                     className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition ${
-                      index === selectedIndex ? 'bg-indigo-600/20 text-white' : 'text-gray-300 hover:bg-gray-800'
+                      index === selectedIndex ? 'bg-pink-500/20 text-white' : 'text-slate-300 hover:bg-white/5'
                     }`}
                   >
                     {img && (
                       <img
                         src={img}
                         alt=""
-                        className="w-10 h-10 rounded-lg object-cover flex-shrink-0 bg-gray-700"
+                        className="w-10 h-10 rounded-lg object-cover flex-shrink-0 bg-slate-700"
                         loading="lazy"
                       />
                     )}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{suggestion.name}</p>
-                      <p className="text-xs text-gray-500 truncate">{suggestion.category}</p>
+                      <p className="text-xs text-slate-500 truncate">{suggestion.category}</p>
                     </div>
                     <div className="text-right flex-shrink-0">
-                      <span className="text-sm font-semibold text-indigo-400">₹{price}</span>
+                      <span className="text-sm font-semibold text-pink-400">₹{price}</span>
                       {originalPrice && (
-                        <span className="text-xs text-gray-500 line-through block">₹{originalPrice}</span>
+                        <span className="text-xs text-slate-500 line-through block">₹{originalPrice}</span>
                       )}
                     </div>
                   </button>
                 );
               })}
-              <div className="px-4 py-2 border-t border-gray-700">
+              <div className="px-4 py-2 border-t border-white/10">
                 <button
                   onMouseDown={handleSubmit}
-                  className="w-full text-center text-sm text-indigo-400 hover:text-indigo-300 transition font-medium"
+                  className="w-full text-center text-sm text-pink-400 hover:text-pink-200 transition font-medium"
                 >
                   See all results for "{query}"
                 </button>
@@ -293,13 +293,13 @@ const SearchBar = () => {
           ) : noResults && !loading ? (
             <>
               <div className="px-4 py-6 text-center">
-                <Search className="w-8 h-8 mx-auto text-gray-600 mb-2" />
-                <p className="text-sm text-gray-400">No products found for "{query}"</p>
-                <p className="text-xs text-gray-600 mt-1">Try different keywords or browse our trending products</p>
+                <Search className="w-8 h-8 mx-auto text-slate-600 mb-2" />
+                <p className="text-sm text-slate-400">No products found for "{query}"</p>
+                <p className="text-xs text-slate-600 mt-1">Try different keywords or browse our trending products</p>
               </div>
               {recommendations.length > 0 && (
                 <>
-                  <div className="px-4 py-2 text-xs text-gray-500 font-medium border-t border-gray-700 flex items-center gap-2">
+                  <div className="px-4 py-2 text-xs text-slate-500 font-medium border-t border-white/10 flex items-center gap-2">
                     <TrendingUp className="w-3 h-3" />
                     Trending Products
                   </div>
@@ -316,19 +316,19 @@ const SearchBar = () => {
                         <button
                           key={product._id || product.productId}
                           onMouseDown={() => handleSuggestionClick(product)}
-                          className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-800 transition text-left"
+                          className="flex items-center gap-2 p-2 rounded-lg hover:bg-white/5 transition text-left"
                         >
                           {img && (
                             <img
                               src={img}
                               alt=""
-                              className="w-12 h-12 rounded-lg object-cover flex-shrink-0 bg-gray-700"
+                              className="w-12 h-12 rounded-lg object-cover flex-shrink-0 bg-slate-700"
                               loading="lazy"
                             />
                           )}
                           <div className="min-w-0 flex-1">
-                            <p className="text-xs font-medium text-gray-200 truncate">{product.name}</p>
-                            <p className="text-xs text-indigo-400 font-semibold">₹{price}</p>
+                            <p className="text-xs font-medium text-slate-200 truncate">{product.name}</p>
+                            <p className="text-xs text-pink-400 font-semibold">₹{price}</p>
                           </div>
                         </button>
                       );
@@ -336,10 +336,10 @@ const SearchBar = () => {
                   </div>
                 </>
               )}
-              <div className="px-4 py-2 border-t border-gray-700">
+              <div className="px-4 py-2 border-t border-white/10">
                 <button
                   onMouseDown={handleSubmit}
-                  className="w-full text-center text-sm text-indigo-400 hover:text-indigo-300 transition font-medium"
+                  className="w-full text-center text-sm text-pink-400 hover:text-pink-200 transition font-medium"
                 >
                   Search all products for "{query}"
                 </button>
@@ -347,7 +347,7 @@ const SearchBar = () => {
             </>
           ) : recommendations.length > 0 && !query.trim() ? (
             <>
-              <div className="px-4 py-2 text-xs text-gray-500 font-medium border-b border-gray-700 flex items-center gap-2">
+              <div className="px-4 py-2 text-xs text-slate-500 font-medium border-b border-white/10 flex items-center gap-2">
                 <TrendingUp className="w-3 h-3" />
                 Trending Products
               </div>
@@ -364,28 +364,28 @@ const SearchBar = () => {
                     <button
                       key={product._id || product.productId}
                       onMouseDown={() => handleSuggestionClick(product)}
-                      className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-800 transition text-left"
+                      className="flex items-center gap-2 p-2 rounded-lg hover:bg-white/5 transition text-left"
                     >
                       {img && (
                         <img
                           src={img}
                           alt=""
-                          className="w-12 h-12 rounded-lg object-cover flex-shrink-0 bg-gray-700"
+                          className="w-12 h-12 rounded-lg object-cover flex-shrink-0 bg-slate-700"
                           loading="lazy"
                         />
                       )}
                       <div className="min-w-0 flex-1">
-                        <p className="text-xs font-medium text-gray-200 truncate">{product.name}</p>
-                        <p className="text-xs text-indigo-400 font-semibold">₹{price}</p>
+                        <p className="text-xs font-medium text-slate-200 truncate">{product.name}</p>
+                        <p className="text-xs text-pink-400 font-semibold">₹{price}</p>
                       </div>
                     </button>
                   );
                 })}
               </div>
-              <div className="px-4 py-2 border-t border-gray-700">
+              <div className="px-4 py-2 border-t border-white/10">
                 <button
                   onMouseDown={() => { closeDropdown(); setMobileOpen(false); navigate('/search'); }}
-                  className="w-full text-center text-sm text-indigo-400 hover:text-indigo-300 transition font-medium"
+                  className="w-full text-center text-sm text-pink-400 hover:text-pink-200 transition font-medium"
                 >
                   Browse all products
                 </button>
@@ -393,12 +393,12 @@ const SearchBar = () => {
             </>
             ) : recsLoading && !query.trim() ? (
             <div className="flex items-center justify-center py-6 gap-2">
-              <Loader2 className="w-5 h-5 animate-spin text-indigo-400" />
-              <span className="text-sm text-gray-400">Loading recommendations...</span>
+              <Loader2 className="w-5 h-5 animate-spin text-pink-500" />
+              <span className="text-sm text-slate-400">Loading recommendations...</span>
             </div>
           ) : loading ? (
             <div className="flex items-center justify-center py-6">
-              <Loader2 className="w-5 h-5 animate-spin text-indigo-400" />
+              <Loader2 className="w-5 h-5 animate-spin text-pink-500" />
             </div>
           ) : null}
         </div>

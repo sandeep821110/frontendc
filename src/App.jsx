@@ -1,36 +1,38 @@
-import React, { useEffect } from 'react'
+import React, { lazy, Suspense, useEffect } from 'react'
 import { useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import HomePage from './components/pages/HomePage'
-import About from './components/pages/About'
-import Contact from './components/pages/Contact'
 import { Route, Routes } from 'react-router-dom'
-import ProductDetails from './components/product/ProductDetails'
-import Login from './components/auth/Login'
-import SignUp from './components/auth/SignUp'
-import Profile from './components/auth/Profile'
-import RequireAuth from './components/auth/RequireAuth'
 import NavBar from './components/pages/NavBar'
 import Footer from './components/pages/Footer'
-import Cart from './components/pages/Cart'
-import Wishlist from './components/pages/Wishlist'
-import CheckOut from './components/pages/CheckOut'
-import Orders from './components/pages/Orders'
-import OrderSuccess from './components/pages/OrderSuccess'
+import RequireAuth from './components/auth/RequireAuth'
+import BrandLoader from './components/BrandLoader'
 
-import { restoreAuthFromStorage, logout } from './features/auth/authSlice'
+const HomePage = lazy(() => import('./components/pages/HomePage'))
+const About = lazy(() => import('./components/pages/About'))
+const Contact = lazy(() => import('./components/pages/Contact'))
+const ProductDetails = lazy(() => import('./components/product/ProductDetails'))
+const Login = lazy(() => import('./components/auth/Login'))
+const SignUp = lazy(() => import('./components/auth/SignUp'))
+const Profile = lazy(() => import('./components/auth/Profile'))
+const Cart = lazy(() => import('./components/pages/Cart'))
+const Wishlist = lazy(() => import('./components/pages/Wishlist'))
+const CheckOut = lazy(() => import('./components/pages/CheckOut'))
+const Orders = lazy(() => import('./components/pages/Orders'))
+const OrderSuccess = lazy(() => import('./components/pages/OrderSuccess'))
+const Address = lazy(() => import('./components/pages/Address'))
+const SearchResults = lazy(() => import('./components/pages/SearchResults'))
+const AllProducts = lazy(() => import('./components/pages/AllProducts'))
+const MyQueries = lazy(() => import('./components/pages/MyQueries'))
+const WalletPage = lazy(() => import('./components/pages/Wallet'))
+
+import { bootstrapAuth, logout } from './features/auth/authSlice'
 import { setOnUnauthorized } from './services/apiClient'
-import Address from './components/pages/Address'
-import SearchResults from './components/pages/SearchResults'
-import AllProducts from './components/pages/AllProducts'
-import DevToken from './components/auth/DevToken'
-import MyQueries from './components/pages/MyQueries'
 
-import PrivacyPolicy from './components/pages/PrivacyPolicy'
-import RefundPolicy from './components/pages/RefundPolicy'
-import TermsOfService from './components/pages/TermsOfService'
-import NotFound from './components/pages/NotFound'
-import ChatWidget from './components/chat/ChatWidget'
+const PrivacyPolicy = lazy(() => import('./components/pages/PrivacyPolicy'))
+const RefundPolicy = lazy(() => import('./components/pages/RefundPolicy'))
+const TermsOfService = lazy(() => import('./components/pages/TermsOfService'))
+const NotFound = lazy(() => import('./components/pages/NotFound'))
+const DevToken = lazy(() => import('./components/auth/DevToken'))
 
 const App = () => {
   const dispatch = useDispatch()
@@ -47,14 +49,15 @@ const App = () => {
     })
   }, [dispatch, navigate])
 
-  // Restore auth state from localStorage on app startup
+  // Bootstrap the session from the httpOnly refreshToken cookie on startup
   useEffect(() => {
-    dispatch(restoreAuthFromStorage())
+    dispatch(bootstrapAuth())
   }, [dispatch])
   return (
     <div>
       <NavBar />
-  
+
+      <Suspense fallback={<BrandLoader />}>
       <Routes>
      
         <Route path="/" element={<HomePage />} />
@@ -100,6 +103,11 @@ const App = () => {
             <Orders />
           </RequireAuth>
         } />
+        <Route path="/wallet" element={
+          <RequireAuth>
+            <WalletPage />
+          </RequireAuth>
+        } />
         <Route path="/order-success" element={
           <RequireAuth>
             <OrderSuccess />
@@ -112,8 +120,8 @@ const App = () => {
         <Route path="*" element={<NotFound />} />
     
     </Routes>
+    </Suspense>
     <Footer />
-    <ChatWidget />
     </div>
   )
 }
